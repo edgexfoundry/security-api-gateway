@@ -1,0 +1,10 @@
+.idea/
+.vscode/
+vendor
+glide.lock
+*.DS_Store
+
+# binary files
+*.log
+*.exe
+edgexsecurity

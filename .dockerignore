@@ -1,0 +1,5 @@
+.vscode/
+vender/
+glide.lock
+*.exe
+core/*.exe
