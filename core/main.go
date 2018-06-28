@@ -45,11 +45,12 @@ func main() {
 	resetNeeded := flag.Bool("reset", false, "reset reverse proxy by removing all services/routes/consumers")
 	userTobeCreated := flag.String("useradd", "", "user that needs to be added to consume the edgex services")
 	userTobeDeleted := flag.String("userdel", "", "user that needs to be deleted from the edgex services")
+	configFileLocation := flag.String("configfile", "res/configuration.toml", "configuration file")
 
 	flag.Usage = HelpCallback
 	flag.Parse()
 
-	config, err := LoadTomlConfig("res/configuration.toml")
+	config, err := LoadTomlConfig(*configFileLocation)
 	if err != nil {
 		lc.Error("Failed to retrieve config data from local file. Please make sure res/configuration.toml file exists with correct formats.")
 		return

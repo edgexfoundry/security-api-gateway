@@ -30,6 +30,7 @@ Server Options:
 	--reset=true/false				Indicate if security service should be reset to initialization status
 	--useradd=<username>				Create an account and return JWT
 	--userdel=<username>				Delete an account		
+	--configfile=<file.toml>			Use a different config file (default: res/configuration.toml)
 	Common Options:
 	-h, --help					Show this message
 `
