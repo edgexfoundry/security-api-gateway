@@ -27,7 +27,7 @@ docker: $(DOCKERS)
 docker_edgexproxy:
 		docker build \
 			--label "git_sha=$(GIT_SHA)" \
-				-t edgexfoundry/docker-edgex-proxy:$(GIT_SHA) \
-				-t edgexfoundry/docker-edgex-proxy:$(VERSION)-dev \
-				-t edgexfoundry/docker-edgex-proxy \
+				-t edgexfoundry/docker-edgex-proxy-go:$(GIT_SHA) \
+				-t edgexfoundry/docker-edgex-proxy-go:$(VERSION)-dev \
+				-t edgexfoundry/docker-edgex-proxy-go \
 				.
