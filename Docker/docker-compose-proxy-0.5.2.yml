@@ -27,6 +27,8 @@ volumes:
   consul-data:
   vault-config:
   vault-pki:
+  vault-file:
+  vault-logs:
 
 
 services:
@@ -80,19 +82,23 @@ services:
     volumes:
       - vault-config:/vault/config
       - vault-pki:/vault/pki
+      - vault-file:/vault/file
+      - vault-logs:/vault/logs
     depends_on:
       - volume
       - config-seed
 
-  vault-init-unseal:
-    image: "edgexfoundry/docker-edgex-vault-init-unseal:latest"
-    container_name: edgex-vault-init-unseal
-    hostname: edgex-vault-init-unseal
+  vault-worker:
+    image: "edgexfoundry/docker-edgex-vault-worker:latest"
+    container_name: edgex-vault-worker
+    hostname: edgex-vault-worker
     networks:
       - edgex-network
+    environment:
+      - 'WATCHDOG_DELAY=3m'
     volumes:
-      - vault-config:/vault/config
       - vault-pki:/vault/pki
+      - vault-file:/vault/file
     depends_on:
       - volume
       - config-seed
@@ -150,7 +156,7 @@ services:
     networks:
         - edgex-network
     volumes:
-        - vault-config:/vault/config 
+        - vault-config:/vault/file 
     depends_on:
         - vault
         - kong-db
