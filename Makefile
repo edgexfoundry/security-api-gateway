@@ -13,17 +13,21 @@ MICROSERVICES=edgexproxy
 .PHONY: $(MICROSERVICES)
 VERSION=$(shell cat ./VERSION)
 GIT_SHA=$(shell git rev-parse --short HEAD)
+prepare:
+	glide install
 build:
-    cd core && $(GO) build  -o  $(MICROSERVICES)
+	cd core && $(GO) build  -o  $(MICROSERVICES)
 clean:
-    cd core && rm -f $(MICROSERVICES)
+	cd core && rm -f $(MICROSERVICES)
+test:
+	
 run:
-    cd core && ./edgexproxy init=true
+	cd core && ./edgexproxy init=true
 docker: $(DOCKERS)
 docker_edgexproxy:
-        docker build \
-                --label "git_sha=$(GIT_SHA)" \
-                -t edgexfoundry/docker-edgex-proxy:$(GIT_SHA) \
-                -t edgexfoundry/docker-edgex-proxy:$(VERSION)-dev \
-                -t edgexfoundry/docker-edgex-proxy \
-                .
+		docker build \
+			--label "git_sha=$(GIT_SHA)" \
+				-t edgexfoundry/docker-edgex-proxy:$(GIT_SHA) \
+				-t edgexfoundry/docker-edgex-proxy:$(VERSION)-dev \
+				-t edgexfoundry/docker-edgex-proxy \
+				.
