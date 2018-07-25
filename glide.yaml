@@ -7,5 +7,6 @@ import:
 - package: github.com/dgrijalva/jwt-go
   version: v3.2.0
 - package: github.com/edgexfoundry/edgex-go
+  version: california
   subpackages:
   - support/logging-client
