@@ -57,7 +57,7 @@ services:
       - consul-config:/consul/config
       - consul-data:/consul/data
     depends_on:
-      - volume  
+      - volume
 
   config-seed:
     image: edgexfoundry/docker-core-config-seed-go:0.6.0
@@ -77,7 +77,7 @@ services:
       - consul
 
   vault:
-    image: edgexfoundry/docker-edgex-vault:latest
+    image: edgexfoundry/docker-edgex-security-vault:0.1.0
     container_name: edgex-vault
     hostname: edgex-vault
     networks:
@@ -101,7 +101,7 @@ services:
       - config-seed
 
   vault-worker:
-    image: edgexfoundry/docker-edgex-vault-worker:latest
+    image: edgexfoundry/docker-edgex-security-vault-worker:0.1.0
     container_name: edgex-vault-worker
     hostname: edgex-vault-worker
     networks:
@@ -114,7 +114,7 @@ services:
     depends_on:
       - volume
       - config-seed
-      - vault	  
+      - vault
 
 # containers for reverse proxy 
   kong-db:
@@ -163,7 +163,7 @@ services:
         - kong-db
 
   edgex-proxy:
-    image: "edgexfoundry/docker-edgex-proxy-go:latest"
+    image: "edgexfoundry/docker-edgex-proxy-go:0.1.0"
     container_name: edgex-proxy
     hostname: edgex-proxy
     networks:
