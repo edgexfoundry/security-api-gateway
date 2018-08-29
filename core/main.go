@@ -24,8 +24,7 @@ import (
 	"os"
 	"time"
 
-	//"github.com/edgexfoundry/edgex-go/core/clients/metadata"
-	"github.com/edgexfoundry/edgex-go/support/logging-client"
+	"github.com/edgexfoundry/edgex-go/pkg/clients/logging"
 )
 
 var lc = CreateLogging()
