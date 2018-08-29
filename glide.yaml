@@ -8,4 +8,4 @@ import:
   version: v3.2.0
 - package: github.com/edgexfoundry/edgex-go
   subpackages:
-  - support/logging-client
+  - pkg/clients/logging

@@ -12,7 +12,7 @@
 # the License.
 #
 # @author: Tingyu Zeng, Dell
-# @version: 0.1.0
+# @version: 0.2.0
 #################################################################################
 
 # This is a TOML config file for edgexsecurity service.
@@ -22,18 +22,36 @@ title = "EdgeX security service config file"
 [kongurl]
 server = "kong"
 adminport = "8001"
+adminportssl = "8444"
 applicationport = "8000"
+applicationportssl = "8443"
 
 [kongadmin]
 username = "administrator"
 password = "changeme"
+
+[kongauth]
+name = "oauth2"
+scopes = "email,phone,address"
+mandatoryscope = "true"
+enableclientcredentials = "true"
+clientid = "test"
+clientsecret = "test"
+redirecturi = "http://edgex.com"
+granttype = "client_credentials"
+scopegranted = "email"
+resource = "coredata"
+
+[kongacl]
+name = "acl"
+whitelist = "admin,user"
 
 [secretservice]
 server = "edgex-vault"
 port = "8200"
 healthcheckpath = "v1/sys/health"
 certpath = "v1/secret/edgex/pki/tls/edgex-kong"
-tokenpath = "/vault/file/resp-init.json"
+tokenpath = "/vault/config/assets/resp-init.json"
 snis = "edgex.com"
 
 [edgexservices]
