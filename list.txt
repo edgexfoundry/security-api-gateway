@@ -1,0 +1,10 @@
+*********************************************************************************
+security-api-gateway
+California branch tip is 7d48865cdca257d4c78deb841e962978da6c3d90 and will be tagged with 0.6.0
+There exists x86 Docker
+*********************************************************************************
+*********************************************************************************
+security-api-gateway
+California branch tip is 7d48865cdca257d4c78deb841e962978da6c3d90 and will be tagged with 0.6.0
+There exists x86 Docker
+*********************************************************************************
