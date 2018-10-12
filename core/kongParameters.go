@@ -30,8 +30,40 @@ type KongRoute struct {
 	Hosts []string `url:"hosts[],omitempty"`
 }
 
-type KongPlugin struct {
+type KongJWTPlugin struct {
 	Name string `url:"name,omitempty"`
+}
+
+type KongOAuth2Plugin struct {
+	Name                    string `url:"name"`
+	Scope                   string `url:"config.scopes"`
+	MandatoryScope          string `url:"config.mandatory_scope"`
+	EnableClientCredentials string `url:"config.enable_client_credentials"`
+}
+
+type KongConsumerOauth2 struct {
+	Name         string `url:"name,omitempty"`
+	ClientId     string `url:"client_id,omitempty"`
+	ClientSecret string `url:"client_secret,omitempty"`
+	RedirectUri  string `url:"redirect_uri,omitempty"`
+}
+
+type KongOuath2TokenRequest struct {
+	ClientId     string `url:"client_id,omitempty"`
+	ClientSecret string `url:"client_secret,omitempty"`
+	GrantType    string `url:"grant_type,omitempty"`
+	Scope        string `url:"scope,omitempty"`
+}
+
+type KongOauth2Token struct {
+	TokenType   string `json:"token_type"`
+	AccessToken string `json:"access_token"`
+	Expires     int    `json:"expires_in"`
+}
+
+type KongACLPlugin struct {
+	Name      string `url:"name"`
+	WhiteList string `url:"config.whitelist"`
 }
 
 type KongBasicAuthPlugin struct {
@@ -41,7 +73,7 @@ type KongBasicAuthPlugin struct {
 
 type KongUser struct {
 	UserName string `url:"username,omitempty"`
-	Password string `url:"password,omitempty"`
+	Group    string `url:"group,omitempty"`
 }
 
 type CertPair struct {

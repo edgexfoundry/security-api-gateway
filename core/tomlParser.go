@@ -24,19 +24,41 @@ type tomlConfig struct {
 	Title         string
 	KongURL       kongurl
 	KongAdmin     kongadmin
+	KongAuth      kongauth
+	KongACL       KongACLPlugin
 	SecretService secretservice
 	EdgexServices map[string]service
 }
 
 type kongurl struct {
-	Server          string
-	AdminPort       string
-	ApplicationPort string
+	Server             string
+	AdminPort          string
+	AdminPortSSL       string
+	ApplicationPort    string
+	ApplicationPortSSL string
 }
 
 type kongadmin struct {
 	UserName string
 	Password string
+}
+
+type kongauth struct {
+	Name                    string
+	Scopes                  string
+	MandatoryScope          string
+	EnableClientCredentials string
+	ClientId                string
+	ClientSecret            string
+	RedirectUri             string
+	GrantType               string
+	ScopeGranted            string
+	Resource                string
+}
+
+type kongacl struct {
+	Name      string
+	WhiteList string
 }
 
 type secretservice struct {
@@ -45,6 +67,7 @@ type secretservice struct {
 	HealthcheckPath string
 	CertPath        string
 	TokenPath       string
+	CACertPath      string
 	SNIS            string
 }
 

@@ -35,6 +35,7 @@ func loadKongCerts(config *tomlConfig, url string, secretBaseURL string, c *http
 		Key:  key,
 		Snis: []string{config.SecretService.SNIS},
 	}
+
 	lc.Info("Trying to upload cert to proxy server.")
 	req, err := sling.New().Base(url).Post(CertificatesPath).BodyJSON(body).Request()
 	resp, err := c.Do(req)
@@ -59,7 +60,7 @@ func getCertKeyPair(config *tomlConfig, secretBaseURL string, c *http.Client) (s
 		return "", "", err
 	}
 
-	s := sling.New().Set(VaultToken, t.Token)
+	s := sling.New().Set(VaultToken, t)
 	req, err := s.New().Base(secretBaseURL).Get(config.SecretService.CertPath).Request()
 	resp, err := c.Do(req)
 	if err != nil {
@@ -67,6 +68,7 @@ func getCertKeyPair(config *tomlConfig, secretBaseURL string, c *http.Client) (s
 		return "", "", errors.New(errStr)
 	}
 	defer resp.Body.Close()
+
 	collection := CertCollect{}
 	json.NewDecoder(resp.Body).Decode(&collection)
 	lc.Info(collection.Section.Cert)
