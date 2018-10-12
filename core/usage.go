@@ -29,6 +29,7 @@ Server Options:
 	--init=true/false				Indicates if security service should be initialized
 	--reset=true/false				Indicate if security service should be reset to initialization status
 	--useradd=<username>				Create an account and return JWT
+	--group=<groupname>					Group name the user belongs to
 	--userdel=<username>				Delete an account		
 	--configfile=<file.toml>			Use a different config file (default: res/configuration.toml)
 	Common Options:

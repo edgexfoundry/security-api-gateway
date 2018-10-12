@@ -1,10 +1,7 @@
 {
-    "keys": [
-      "69be8924eea8b553755d090f6f38a7ebab24d17b8a6a515ae5f11cb13872b532"
-    ],
-    "keys_base64": [
-      "ab6JJO6otVN1XQkPbzin66sk0XuKalFa5fEcsThytTI="
-    ],
-    "root_token": "232d6e0a-3a09-1090-aa08-b303f28c05e1"
-  }
-  
+  "keys":["20b2de7cbba8f711fc6667b1a91a6e26d66315ed5263da09153de386f6ac24ad"],
+  "keys_base64":["ILLefLuo9xH8ZmexqRpuJtZjFe1SY9oJFT3jhvasJK0="],
+  "recovery_keys":null,
+  "recovery_keys_base64":null,
+  "root_token":"6f6da88e-7170-d110-ffe5-8974718c10e2"
+}

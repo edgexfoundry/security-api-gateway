@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.0
+ * @version: 0.1.1
  *******************************************************************************/
 package main
 
@@ -39,10 +39,11 @@ func main() {
 		HelpCallback()
 	}
 	useConsul := flag.Bool("consul", false, "retrieve configuration from consul server")
-	insecureSkipVerify := flag.Bool("insureskipverify", true, "skip server side SSL verification, mainly for self-signed cert.")
+	insecureSkipVerify := flag.Bool("insureskipverify", true, "skip server side SSL verification, mainly for self-signed cert")
 	initNeeded := flag.Bool("init", false, "run init procedure for security service.")
 	resetNeeded := flag.Bool("reset", false, "reset reverse proxy by removing all services/routes/consumers")
 	userTobeCreated := flag.String("useradd", "", "user that needs to be added to consume the edgex services")
+	userofGroup := flag.String("group", "user", "group that the user belongs to. By default it is in user group")
 	userTobeDeleted := flag.String("userdel", "", "user that needs to be deleted from the edgex services")
 	configFileLocation := flag.String("configfile", "res/configuration.toml", "configuration file")
 
@@ -88,15 +89,16 @@ func main() {
 		resetProxy(proxyBaseURL, client)
 	}
 
-	if *userTobeCreated != "" {
-		err := createConsumer(*userTobeCreated, proxyBaseURL, EdgeXService, client)
+	if *userTobeCreated != "" && *userofGroup != "" {
+		err := createConsumer(*userTobeCreated, *userofGroup, proxyBaseURL, EdgeXService, client)
 		if err != nil {
 			lc.Error(err.Error())
 			return
 		}
-		t, err := createJWTForConsumer(*userTobeCreated, proxyBaseURL, EdgeXService, client)
+
+		t, err := createTokenForConsumer(config, *userTobeCreated, proxyBaseURL, EdgeXService, client)
 		if err != nil {
-			lc.Error("Failed to create jwt token for edgex service due to error %s.", err.Error())
+			lc.Error(fmt.Sprintf("Failed to create jwt token for edgex service due to error %s.", err.Error()))
 		} else {
 			fmt.Println(fmt.Sprintf("The JWT for user %s is: %s. Please keep the jwt for accessing edgex services.", *userTobeCreated, t))
 		}
