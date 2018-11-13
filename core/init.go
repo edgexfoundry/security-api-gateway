@@ -47,8 +47,8 @@ func initSecurityServices(config *tomlConfig, baseURL string, secretBaseURL stri
 		// service ID to use when adding the route
 		serviceObject, err := initKongService(baseURL, client, serviceParams)
 		if err != nil {
-			lc.Error(err.Error())
-			return
+			lc.Info(err.Error())
+			continue
 		}
 
 		// create the route using the Host as the same thing as the configured sni
@@ -79,7 +79,7 @@ func initKongService(url string, c *http.Client, service *KongService) (*KongSer
 		s := fmt.Sprintf("Failed to set up proxy service for %s.", service.Name)
 		return nil, errors.New(s)
 	} else {
-		if resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == 201 {
 			lc.Info(fmt.Sprintf("Successful to set up proxy service for %s.", service.Name))
 			serviceObj := KongServiceResponse{}
 			err = json.NewDecoder(resp.Body).Decode(&serviceObj)
@@ -87,6 +87,8 @@ func initKongService(url string, c *http.Client, service *KongService) (*KongSer
 				return nil, err
 			}
 			return &serviceObj, nil
+		} else if resp.StatusCode == 409 {
+			return nil, fmt.Errorf("Proxy service for %s has been set up.", service.Name)
 		} else {
 			return nil, fmt.Errorf("failed to set up proxy service for %s", service.Name)
 		}
@@ -176,7 +178,7 @@ func initKongRoutes(url string, c *http.Client, r *KongRoute, path string, name 
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info(fmt.Sprintf("Successful to set up route for %s.", name))
 		} else {
-			s := fmt.Sprintf("Failed to set up route for %s with errorcode %d.", name, resp.StatusCode)
+			s := fmt.Sprintf("Failed to set up route for %s with error %s.", name, resp.Status)
 			lc.Error(s)
 		}
 	}
