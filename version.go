@@ -6,4 +6,4 @@
 package edgexsecurity
 
 // Global version for edgexsecurity
-var Version string = "master"
+var Version string = "delhi"
