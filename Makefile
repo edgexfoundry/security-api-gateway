@@ -11,7 +11,7 @@ DOCKERS=docker_edgexproxy
 MICROSERVICES=edgexproxy
 .PHONY: $(MICROSERVICES)
 VERSION=$(shell cat ./VERSION)
-GIT_SHA=$(shell git rev-parse --short HEAD)
+GIT_SHA=$(shell git rev-parse HEAD)
 
 prepare:
 	glide install
