@@ -22,16 +22,21 @@ import (
 	"io/ioutil"
 )
 
-type Secret struct {
-	Token string `json:"root_token"`
+type Auth struct {
+	Secret Inner `json:"auth"`
 }
 
-func getSecret(filename string) (Secret, error) {
-	s := Secret{}
+type Inner struct {
+	Token string `json:"client_token"`
+}
+
+func getSecret(filename string) (string, error) {
+	s := Auth{}
 	raw, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return s, err
+		return s.Secret.Token, err
 	}
+
 	err = json.Unmarshal(raw, &s)
-	return s, err
+	return s.Secret.Token, err
 }
