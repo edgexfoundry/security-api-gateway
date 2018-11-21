@@ -74,7 +74,7 @@ func main() {
 	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
 
 	checkProxyStatus(proxyBaseURL, client)
-	checkSecretServiceStatus(secretServiceBaseURL+config.SecretService.HealthcheckPath, client)
+	//checkSecretServiceStatus(secretServiceBaseURL+config.SecretService.HealthcheckPath, client)
 
 	if *initNeeded == true && *resetNeeded == true {
 		lc.Error("can't run initialization and reset at the same time for security service.")
