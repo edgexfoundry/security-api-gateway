@@ -23,6 +23,6 @@ const (
 	CertificatesPath = "certificates/"
 	PluginsPath      = "plugins/"
 	SecurityService  = "securityservice"
-	EdgeXService     = "edgex"
+	EdgeXService     = "edgex.com"
 	VaultToken       = "X-Vault-Token"
 )
