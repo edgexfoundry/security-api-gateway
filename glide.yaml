@@ -7,6 +7,6 @@ import:
 - package: github.com/dgrijalva/jwt-go
   version: v3.2.0
 - package: github.com/edgexfoundry/edgex-go
-  version: delhi
+  version: master
   subpackages:
   - pkg/clients/logging
