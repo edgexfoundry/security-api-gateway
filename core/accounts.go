@@ -178,11 +178,11 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 		if resp.StatusCode == 200 || resp.StatusCode == 201 {
 			defer resp.Body.Close()
 			json.NewDecoder(resp.Body).Decode(&token)
-			lc.Info(fmt.Sprintf("successful on retrieving JWT credential for consumer %s.", user))
+			lc.Info(fmt.Sprintf("successful on retrieving bearer credential for consumer %s.", user))
 			return token.AccessToken, nil
 		}
 		b, _ := ioutil.ReadAll(resp.Body)
-		errString := fmt.Sprintf("Failed to create jwt token for oauth authentication at endpoint oauth2/token with error %s,%s.", resp.Status, string(b))
+		errString := fmt.Sprintf("Failed to create bearer token for oauth authentication at endpoint oauth2/token with error %s,%s.", resp.Status, string(b))
 		return "", errors.New(errString)
 	}
 

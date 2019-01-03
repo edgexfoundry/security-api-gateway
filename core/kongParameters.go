@@ -25,9 +25,26 @@ type KongService struct {
 	Protocol string `url:"protocol,omitempty"`
 }
 
+// KongServiceResponse is the response from Kong when creating a service
+type KongServiceResponse struct {
+	ID             string `json:"id,omitempty"`
+	CreatedAt      uint64 `json:"created_at,omitempty"`
+	UpdatedAt      uint64 `json:"updated_at,omitempty"`
+	ConnectTimeout int64  `json:"connect_timeout,omitempty"`
+	Protocol       string `json:"protocol,omitempty"`
+	Host           string `json:"host,omitempty"`
+	Port           uint64 `json:"port,omitempty"`
+	Path           string `json:"path,omitempty"`
+	Name           string `json:"name,omitempty"`
+	Retries        int64  `json:"retries,omitempty"`
+	ReadTimeout    int64  `json:"read_timeout,omitempty"`
+	WriteTimeout   int64  `json:"write_timeout,omitempty"`
+}
+
 type KongRoute struct {
-	Paths []string `url:"paths[],omitempty"`
-	Hosts []string `url:"hosts[],omitempty"`
+	Paths   []string             `json:"paths,omitempty"`
+	Hosts   []string             `json:"hosts,omitempty"`
+	Service *KongServiceResponse `json:"service,omitempty"`
 }
 
 type KongJWTPlugin struct {
@@ -86,9 +103,9 @@ type CertCollect struct {
 }
 
 type CertInfo struct {
-	Cert string   `json:"cert,omitempty"`
-	Key  string   `json:"key,omitempty"`
-	Snis []string `json:"snis,omitempty"`
+	Cert string   `url:"cert,omitempty"`
+	Key  string   `url:"key,omitempty"`
+	Snis []string `url:"snis,omitempty"`
 }
 
 type JWTCred struct {

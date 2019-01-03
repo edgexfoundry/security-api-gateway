@@ -30,7 +30,7 @@ import (
 var lc = CreateLogging()
 
 func CreateLogging() logger.LoggingClient {
-	return logger.NewClient(SecurityService, false, fmt.Sprintf("%s-%s.log", SecurityService, time.Now().Format("2006-01-02")))
+	return logger.NewClient(SecurityService, false, fmt.Sprintf("%s-%s.log", SecurityService, time.Now().Format("2006-01-02")), logger.InfoLog)
 }
 
 func main() {
@@ -74,7 +74,7 @@ func main() {
 	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
 
 	checkProxyStatus(proxyBaseURL, client)
-	checkSecretServiceStatus(secretServiceBaseURL+config.SecretService.HealthcheckPath, client)
+	//checkSecretServiceStatus(secretServiceBaseURL+config.SecretService.HealthcheckPath, client)
 
 	if *initNeeded == true && *resetNeeded == true {
 		lc.Error("can't run initialization and reset at the same time for security service.")

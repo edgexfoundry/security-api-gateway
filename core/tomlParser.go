@@ -67,6 +67,7 @@ type secretservice struct {
 	HealthcheckPath string
 	CertPath        string
 	TokenPath       string
+	CACertPath      string
 	SNIS            string
 }
 
