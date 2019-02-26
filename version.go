@@ -6,4 +6,4 @@
 package edgexsecurity
 
 // Global version for edgexsecurity
-var Version string = "0.2.1"
+var Version string = "0.5.0"
