@@ -26,10 +26,6 @@ adminportssl = "8444"
 applicationport = "8000"
 applicationportssl = "8443"
 
-[kongadmin]
-username = "administrator"
-password = "changeme"
-
 [kongauth]
 name = "oauth2"
 scopes = "email,phone,address"

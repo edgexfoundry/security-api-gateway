@@ -10,3 +10,5 @@ glide.lock
 edgexsecurity
 
 core/edgexproxy
+core/edgexproxy.exe
+*.sum
