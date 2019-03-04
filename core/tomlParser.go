@@ -23,7 +23,6 @@ import (
 type tomlConfig struct {
 	Title         string
 	KongURL       kongurl
-	KongAdmin     kongadmin
 	KongAuth      kongauth
 	KongACL       KongACLPlugin
 	SecretService secretservice
@@ -36,11 +35,6 @@ type kongurl struct {
 	AdminPortSSL       string
 	ApplicationPort    string
 	ApplicationPortSSL string
-}
-
-type kongadmin struct {
-	UserName string
-	Password string
 }
 
 type kongauth struct {
