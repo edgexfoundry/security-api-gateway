@@ -127,7 +127,7 @@ services:
         - 'POSTGRES_USER=kong'
 
   kong-migrations:
-    image: "kong:0.13.0"
+    image: "kong:1.0.3"
     container_name: kong-migration
     hostname: kong-migration
     networks:
@@ -135,10 +135,10 @@ services:
     environment:
         - 'KONG_DATABASE=postgres'
         - 'KONG_PG_HOST=kong-db'
-    command: "kong migrations up"
+    command: "kong migrations bootstrap"
 
   kong:
-    image: "kong:0.13.0"
+    image: "kong:1.0.3"
     container_name: kong
     hostname: kong
     networks:

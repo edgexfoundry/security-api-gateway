@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.0
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -43,31 +43,25 @@ func initSecurityServices(config *tomlConfig, baseURL string, secretBaseURL stri
 			Protocol: service.Protocol,
 		}
 
-		// create the kong service first so that we can get the
-		// service ID to use when adding the route
+		// create the kong service first so that we get the service ID that is associated with the route
 		serviceObject, err := initKongService(baseURL, client, serviceParams)
 		if err != nil {
 			lc.Info(err.Error())
 			continue
 		}
 
+		lc.Info(serviceObject.ID)
+
 		// create the route using the Host as the same thing as the configured sni
 		routeParams := &KongRoute{
 			Paths: []string{"/" + service.Name},
-			Hosts: []string{config.SecretService.SNIS},
-			// only capture the ID from the service response
-			Service: &KongServiceResponse{
-				ID: serviceObject.ID,
-			},
+			Name:  service.Name,
 		}
-		initKongRoutes(baseURL, client, routeParams, RoutesPath, service.Name)
-		//pluginPath := fmt.Sprintf("%s%s/%s", ServicesPath, service.Name, PluginsPath)
-		//initAuthmethodForService(config, baseURL, client, pluginPath, service.Name)
-	}
+		initKongRoutes(baseURL, client, routeParams, service.Name)
 
-	initAuthmethodForService(config, baseURL, client)
-	initACLForServices(config, baseURL, client)
-	//initKongAdminInterface(config, baseURL, client)
+		initAuthmethodForRoute(config, baseURL, client, service.Name)
+		initACLForRoute(config, baseURL, client, service.Name)
+	}
 
 	lc.Info("Finishing initialization for reverse proxy.")
 }
@@ -75,12 +69,15 @@ func initSecurityServices(config *tomlConfig, baseURL string, secretBaseURL stri
 func initKongService(url string, c *http.Client, service *KongService) (*KongServiceResponse, error) {
 	req, err := sling.New().Base(url).Post(ServicesPath).BodyForm(service).Request()
 	resp, err := c.Do(req)
+
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up proxy service for %s.", service.Name)
+		defer resp.Body.Close()
 		return nil, errors.New(s)
 	} else {
 		if resp.StatusCode == 201 {
 			lc.Info(fmt.Sprintf("Successful to set up proxy service for %s.", service.Name))
+
 			serviceObj := KongServiceResponse{}
 			err = json.NewDecoder(resp.Body).Decode(&serviceObj)
 			if err != nil {
@@ -88,24 +85,25 @@ func initKongService(url string, c *http.Client, service *KongService) (*KongSer
 			}
 			return &serviceObj, nil
 		} else if resp.StatusCode == 409 {
-			return nil, fmt.Errorf("Proxy service for %s has been set up.", service.Name)
+			return nil, fmt.Errorf("proxy service for %s has been set up", service.Name)
 		} else {
 			return nil, fmt.Errorf("failed to set up proxy service for %s", service.Name)
 		}
 	}
 }
 
-func initACLForServices(config *tomlConfig, url string, c *http.Client) {
-	lc.Info("Enabling ACL for api gateway service.")
+func initACLForRoute(config *tomlConfig, url string, c *http.Client, service string) {
+	lc.Info("Enabling ACL for api gateway route.")
 	aclParams := &KongACLPlugin{
 		Name:      config.KongACL.Name,
 		WhiteList: config.KongACL.WhiteList,
 	}
-	req, err := sling.New().Base(url).Post(PluginsPath).BodyForm(aclParams).Request()
+	req, err := sling.New().Base(url + "routes/" + service + "/").Post(PluginsPath).BodyForm(aclParams).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up acl.")
 		lc.Error(s)
+		defer resp.Body.Close()
 	} else {
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up acl.")
@@ -116,10 +114,10 @@ func initACLForServices(config *tomlConfig, url string, c *http.Client) {
 	}
 }
 
-func initAuthmethodForService(config *tomlConfig, url string, c *http.Client) {
+func initAuthmethodForRoute(config *tomlConfig, url string, c *http.Client, service string) {
 	lc.Info(fmt.Sprintf("selected auth method as %s.", config.KongAuth.Name))
 	if config.KongAuth.Name == "jwt" {
-		initJWTAuthForService(config, url, c)
+		initJWTAuthForRoute(config, url, c, service)
 	} else if config.KongAuth.Name == "oauth2" {
 		initOauth2ForService(config, url, c)
 	}
@@ -137,6 +135,7 @@ func initOauth2ForService(config *tomlConfig, url string, c *http.Client) {
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up oauth2 authentication with error %s.", err.Error())
+		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
@@ -148,15 +147,17 @@ func initOauth2ForService(config *tomlConfig, url string, c *http.Client) {
 	}
 
 }
-func initJWTAuthForService(config *tomlConfig, url string, c *http.Client) {
+
+func initJWTAuthForRoute(config *tomlConfig, url string, c *http.Client, service string) {
 	jwtParams := &KongJWTPlugin{
 		Name: config.KongAuth.Name,
 	}
 
-	req, err := sling.New().Base(url).Post(PluginsPath).BodyForm(jwtParams).Request()
+	req, err := sling.New().Base(url + "routes/" + service + "/").Post(PluginsPath).BodyForm(jwtParams).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up jwt authentication.")
+		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
@@ -168,11 +169,14 @@ func initJWTAuthForService(config *tomlConfig, url string, c *http.Client) {
 	}
 }
 
-func initKongRoutes(url string, c *http.Client, r *KongRoute, path string, name string) {
-	req, err := sling.New().Base(url).Post(path).BodyJSON(r).Request()
+func initKongRoutes(url string, c *http.Client, r *KongRoute, name string) {
+	routesubpath := "services/" + name + "/routes"
+	lc.Info(routesubpath)
+	req, err := sling.New().Base(url).Post(routesubpath).BodyJSON(r).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up routes for %s with error %s.", name, err.Error())
+		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
@@ -180,42 +184,6 @@ func initKongRoutes(url string, c *http.Client, r *KongRoute, path string, name 
 		} else {
 			s := fmt.Sprintf("Failed to set up route for %s with error %s.", name, resp.Status)
 			lc.Error(s)
-		}
-	}
-}
-
-//redirect request for 8001 to an admin service of 8000, and add authentication
-func initKongAdminInterface(config *tomlConfig, url string, c *http.Client) {
-	adminServiceParams := &KongService{
-		Name:     "admin",
-		Host:     config.KongURL.Server,
-		Port:     config.KongURL.AdminPort,
-		Protocol: "http",
-	}
-	req, err := sling.New().Base(url).Post(ServicesPath).BodyForm(adminServiceParams).Request()
-	resp, err := c.Do(req)
-	if err != nil {
-		s := fmt.Sprintf("Failed to set up service for admin loopback with error %s.", err.Error())
-		lc.Error(s)
-	} else {
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
-			lc.Info("Successful to set up admin loopback.")
-		} else {
-			lc.Error("Failed to set up admin loopback.")
-		}
-	}
-
-	adminRouteParams := &KongRoute{Paths: []string{"/admin"}}
-	adminRoutePath := fmt.Sprintf("%sadmin/routes", ServicesPath)
-	req, err = sling.New().Base(url).Post(adminRoutePath).BodyJSON(adminRouteParams).Request()
-	resp, err = c.Do(req)
-	if err != nil {
-		lc.Error("Failed to set up admin service route.")
-	} else {
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
-			lc.Info("Successful to set up admin service routes.")
-		} else {
-			lc.Error("Failed to set up admin service routes.")
 		}
 	}
 }

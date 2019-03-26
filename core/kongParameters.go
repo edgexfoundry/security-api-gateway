@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.0
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -42,9 +42,8 @@ type KongServiceResponse struct {
 }
 
 type KongRoute struct {
-	Paths   []string             `json:"paths,omitempty"`
-	Hosts   []string             `json:"hosts,omitempty"`
-	Service *KongServiceResponse `json:"service,omitempty"`
+	Paths []string `json:"paths,omitempty"`
+	Name  string   `json:"name,omitempty"`
 }
 
 type KongJWTPlugin struct {
@@ -86,11 +85,6 @@ type KongACLPlugin struct {
 type KongBasicAuthPlugin struct {
 	Name            string `url:"name,omitempty"`
 	HideCredentials string `url:"config.hide_credentials,omitempty"`
-}
-
-type KongUser struct {
-	UserName string `url:"username,omitempty"`
-	Group    string `url:"group,omitempty"`
 }
 
 type CertPair struct {

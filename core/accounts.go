@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.1
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -40,8 +40,9 @@ func createConsumer(user string, group string, url string, service string, c *ht
 		s := "Only a-z and A-Z char are allowed for user name."
 		return errors.New(s)
 	}
-	userNameParams := &KongUser{UserName: user}
-	req, err := sling.New().Base(url).Post(ConsumersPath).BodyForm(userNameParams).Request()
+
+	path := fmt.Sprintf("%s%s", ConsumersPath, user)
+	req, err := sling.New().Base(url).Put(path).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to create consumer %s for %s service with error %s.", user, service, err.Error())
@@ -60,21 +61,26 @@ func createConsumer(user string, group string, url string, service string, c *ht
 	return errors.New(s)
 }
 
-func associateConsumerWithGroup(user string, group string, url string, c *http.Client) error {
-	acctParams := &KongUser{Group: group}
+func associateConsumerWithGroup(user string, g string, url string, c *http.Client) error {
+
+	type acctParams struct {
+		Group string `url:"group"`
+	}
+
+	acc := acctParams{g}
 	path := fmt.Sprintf("%s%s/acls", ConsumersPath, user)
-	req, err := sling.New().Base(url).Post(path).BodyForm(acctParams).Request()
+	req, err := sling.New().Base(url).Post(path).BodyForm(acc).Request()
 	resp, err := c.Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to associate consumer %s for with group %s with error %s.", user, group, err.Error())
+		s := fmt.Sprintf("Failed to associate consumer %s for with group %s with error %s.", user, g, err.Error())
 		return errors.New(s)
 	}
 	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
-		lc.Info(fmt.Sprintf("Successful to associate consumer %s with group %s.", user, group))
+		lc.Info(fmt.Sprintf("Successful to associate consumer %s with group %s.", user, g))
 		return nil
 	}
 	b, _ := ioutil.ReadAll(resp.Body)
-	s := fmt.Sprintf("Failed to associate consumer %s with group %s with error %s,%s.", user, group, resp.Status, string(b))
+	s := fmt.Sprintf("Failed to associate consumer %s with group %s with error %s,%s.", user, g, resp.Status, string(b))
 	lc.Error(s)
 	return errors.New(s)
 }

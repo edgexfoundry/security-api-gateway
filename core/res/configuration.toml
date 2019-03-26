@@ -12,7 +12,7 @@
 # the License.
 #
 # @author: Tingyu Zeng, Dell
-# @version: 0.2.0
+# @version: 0.5.0
 #################################################################################
 
 # This is a TOML config file for edgexsecurity service.
@@ -26,12 +26,8 @@ adminportssl = "8444"
 applicationport = "8000"
 applicationportssl = "8443"
 
-[kongadmin]
-username = "administrator"
-password = "changeme"
-
 [kongauth]
-name = "oauth2"
+name = "jwt"
 scopes = "email,phone,address"
 mandatoryscope = "true"
 enableclientcredentials = "true"
@@ -44,7 +40,7 @@ resource = "coredata"
 
 [kongacl]
 name = "acl"
-whitelist = "admin,user"
+whitelist = "admin"
 
 [secretservice]
 server = "localhost"
