@@ -27,8 +27,8 @@ applicationport = "8000"
 applicationportssl = "8443"
 
 [kongauth]
-name = "jwt"
-scopes = "email,phone,address"
+name = "oauth2"
+scopes = "email"
 mandatoryscope = "true"
 enableclientcredentials = "true"
 clientid = "test"

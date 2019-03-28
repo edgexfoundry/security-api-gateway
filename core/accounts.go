@@ -133,9 +133,8 @@ func createTokenWithJWT(user string, url string, name string, c *http.Client) (s
 }
 
 func createTokenWithOauth2(config *tomlConfig, user string, url string) (string, error) {
-	//curl -X POST "http://localhost:8001/consumers/user123/oauth2" --data "name=test" --data "client_id=test" --data "client_secret=test"  --data "redirect_uri=http://www.yahoo.com/"
-	//curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=test&grant_type=client_credentials" -d "client_secret=test" -d "scope=email"
-	//or curl -k -v https://localhost:8443/oauth2/token -H "host: edgex" "-d "client_id=test&grant_type=client_credentials" -d "client_secret=test" -d "scope=email"
+	//curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=edgex.com" --data "client_id=test" -d "client_secret=test"  -d "redirect_uri=http://www.edgex.com/"
+	//curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=test" -d "grant_type=client_credentials" -d "client_secret=test" -d "scope=email"
 
 	url = fmt.Sprintf("http://%s:%s/", config.KongURL.Server, config.KongURL.AdminPort)
 
@@ -175,7 +174,6 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 		path := fmt.Sprintf("%s/oauth2/token", config.KongAuth.Resource)
 		lc.Info(fmt.Sprintf("Creating token on the endpoint of %s", path))
 		req, err := sling.New().Base(url).Post(path).BodyForm(tokenreq).Request()
-		req.Host = EdgeXService
 		resp, err := client.Do(req)
 		if err != nil {
 			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", config.KongAuth.ClientId, err.Error()))

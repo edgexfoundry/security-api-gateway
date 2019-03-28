@@ -119,11 +119,11 @@ func initAuthmethodForRoute(config *tomlConfig, url string, c *http.Client, serv
 	if config.KongAuth.Name == "jwt" {
 		initJWTAuthForRoute(config, url, c, service)
 	} else if config.KongAuth.Name == "oauth2" {
-		initOauth2ForService(config, url, c)
+		initOauth2ForService(config, url, c, service)
 	}
 }
 
-func initOauth2ForService(config *tomlConfig, url string, c *http.Client) {
+func initOauth2ForService(config *tomlConfig, url string, c *http.Client, service string) {
 	oauth2Params := &KongOAuth2Plugin{
 		Name:                    config.KongAuth.Name,
 		Scope:                   config.KongAuth.Scopes,
@@ -131,7 +131,7 @@ func initOauth2ForService(config *tomlConfig, url string, c *http.Client) {
 		EnableClientCredentials: config.KongAuth.EnableClientCredentials,
 	}
 
-	req, err := sling.New().Base(url).Post(PluginsPath).BodyForm(oauth2Params).Request()
+	req, err := sling.New().Base(url + "services/" + service + "/").Post(PluginsPath).BodyForm(oauth2Params).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up oauth2 authentication with error %s.", err.Error())

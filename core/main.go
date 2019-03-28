@@ -100,6 +100,10 @@ func main() {
 			lc.Error(fmt.Sprintf("Failed to create access token for edgex service due to error %s.", err.Error()))
 		} else {
 			fmt.Println(fmt.Sprintf("The access token for user %s is: %s. Please keep the token for accessing edgex services.", *userTobeCreated, t))
+			err = createTokenFile(*userTobeCreated, t, "accessToken.json")
+			if err != nil {
+				lc.Error(err.Error())
+			}
 		}
 	}
 

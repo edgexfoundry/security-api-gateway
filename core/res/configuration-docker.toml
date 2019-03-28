@@ -28,7 +28,7 @@ applicationportssl = "8443"
 
 [kongauth]
 name = "oauth2"
-scopes = "email,phone,address"
+scopes = "email"
 mandatoryscope = "true"
 enableclientcredentials = "true"
 clientid = "test"
@@ -47,7 +47,7 @@ server = "edgex-vault"
 port = "8200"
 healthcheckpath = "v1/sys/health"
 certpath = "v1/secret/edgex/pki/tls/edgex-kong"
-tokenpath = "/vault/config/assets/admin-token.json"
+tokenpath = "/vault/config/assets/resp-init.json"
 cacertpath = "/vault/config/pki/EdgeXFoundryCA/EdgeXFoundryCA.pem"
 snis = "edgex.com"
 

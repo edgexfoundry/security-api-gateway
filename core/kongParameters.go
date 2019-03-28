@@ -61,7 +61,7 @@ type KongConsumerOauth2 struct {
 	Name         string `url:"name,omitempty"`
 	ClientId     string `url:"client_id,omitempty"`
 	ClientSecret string `url:"client_secret,omitempty"`
-	RedirectUri  string `url:"redirect_uri,omitempty"`
+	RedirectUri  string `url:"redirect_uris,omitempty"`
 }
 
 type KongOuath2TokenRequest struct {

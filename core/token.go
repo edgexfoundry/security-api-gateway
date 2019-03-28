@@ -30,6 +30,11 @@ type Inner struct {
 	Token string `json:"client_token"`
 }
 
+type userTokenPair struct {
+	User  string
+	Token string
+}
+
 func getSecret(filename string) (string, error) {
 	s := Auth{}
 	raw, err := ioutil.ReadFile(filename)
@@ -39,4 +44,20 @@ func getSecret(filename string) (string, error) {
 
 	err = json.Unmarshal(raw, &s)
 	return s.Secret.Token, err
+}
+
+func createTokenFile(u string, t string, filename string) error {
+
+	data := userTokenPair{
+		User:  u,
+		Token: t,
+	}
+
+	jdata, err := json.MarshalIndent(data, "", " ")
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, jdata, 0644)
+	return err
 }
