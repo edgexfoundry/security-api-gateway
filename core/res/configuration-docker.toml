@@ -28,19 +28,12 @@ applicationportssl = "8443"
 
 [kongauth]
 name = "oauth2"
-scopes = "email"
-mandatoryscope = "true"
-enableclientcredentials = "true"
-clientid = "test"
-clientsecret = "test"
-redirecturi = "http://edgex.com"
-granttype = "client_credentials"
-scopegranted = "email"
+token_ttl = 0
 resource = "coredata"
 
 [kongacl]
 name = "acl"
-whitelist = "admin,user"
+whitelist = "admin"
 
 [secretservice]
 server = "edgex-vault"

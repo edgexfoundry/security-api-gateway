@@ -59,9 +59,12 @@ func initSecurityServices(config *tomlConfig, baseURL string, secretBaseURL stri
 		}
 		initKongRoutes(baseURL, client, routeParams, service.Name)
 
-		initAuthmethodForRoute(config, baseURL, client, service.Name)
-		initACLForRoute(config, baseURL, client, service.Name)
+		//initAuthmethodForRoute(config, baseURL, client, service.Name)
+		//initACLForRoute(config, baseURL, client, service.Name)
 	}
+
+	initAuthmethod(config, baseURL, client)
+	initACL(config, baseURL, client)
 
 	lc.Info("Finishing initialization for reverse proxy.")
 }
@@ -114,6 +117,63 @@ func initACLForRoute(config *tomlConfig, url string, c *http.Client, service str
 	}
 }
 
+func initACL(config *tomlConfig, url string, c *http.Client) {
+	lc.Info("Enabling global ACL for api gateway route.")
+	aclParams := &KongACLPlugin{
+		Name:      config.KongACL.Name,
+		WhiteList: config.KongACL.WhiteList,
+	}
+	req, err := sling.New().Base(url).Post(PluginsPath).BodyForm(aclParams).Request()
+	resp, err := c.Do(req)
+	if err != nil {
+		s := fmt.Sprintf("Failed to set up acl.")
+		lc.Error(s)
+		defer resp.Body.Close()
+	} else {
+		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+			lc.Info("Successful to set up acl.")
+		} else {
+			s := fmt.Sprintf("Failed to set up acl with errorcode %d.", resp.StatusCode)
+			lc.Error(s)
+		}
+	}
+}
+
+func initOAuth2(config *tomlConfig, url string, c *http.Client) {
+	oauth2Params := &KongOAuth2Plugin{
+		Name:                    config.KongAuth.Name,
+		Scope:                   OAuth2Scopes,
+		MandatoryScope:          "true",
+		EnableClientCredentials: "true",
+		EnableGlobalCredentials: "true",
+		TokenTTL:                config.KongAuth.TokenTTL,
+	}
+
+	req, err := sling.New().Base(url).Post(PluginsPath).BodyForm(oauth2Params).Request()
+	resp, err := c.Do(req)
+	if err != nil {
+		s := fmt.Sprintf("Failed to set up oauth2 authentication with error %s.", err.Error())
+		defer resp.Body.Close()
+		lc.Error(s)
+	} else {
+		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+			lc.Info("Successful to set up oauth2 authentication.")
+		} else {
+			s := fmt.Sprintf("Failed to set up oauth2 authentication with errorcode %d.", resp.StatusCode)
+			lc.Error(s)
+		}
+	}
+}
+
+func initAuthmethod(config *tomlConfig, url string, c *http.Client) {
+	lc.Info(fmt.Sprintf("selected auth method as %s.", config.KongAuth.Name))
+	if config.KongAuth.Name == "jwt" {
+		initJWTAuth(config, url, c)
+	} else if config.KongAuth.Name == "oauth2" {
+		initOAuth2(config, url, c)
+	}
+}
+
 func initAuthmethodForRoute(config *tomlConfig, url string, c *http.Client, service string) {
 	lc.Info(fmt.Sprintf("selected auth method as %s.", config.KongAuth.Name))
 	if config.KongAuth.Name == "jwt" {
@@ -126,9 +186,10 @@ func initAuthmethodForRoute(config *tomlConfig, url string, c *http.Client, serv
 func initOauth2ForService(config *tomlConfig, url string, c *http.Client, service string) {
 	oauth2Params := &KongOAuth2Plugin{
 		Name:                    config.KongAuth.Name,
-		Scope:                   config.KongAuth.Scopes,
-		MandatoryScope:          config.KongAuth.MandatoryScope,
-		EnableClientCredentials: config.KongAuth.EnableClientCredentials,
+		Scope:                   OAuth2Scopes,
+		MandatoryScope:          "true",
+		EnableClientCredentials: "true",
+		EnableGlobalCredentials: "true",
 	}
 
 	req, err := sling.New().Base(url + "services/" + service + "/").Post(PluginsPath).BodyForm(oauth2Params).Request()
@@ -145,7 +206,27 @@ func initOauth2ForService(config *tomlConfig, url string, c *http.Client, servic
 			lc.Error(s)
 		}
 	}
+}
 
+func initJWTAuth(config *tomlConfig, url string, c *http.Client) {
+	jwtParams := &KongJWTPlugin{
+		Name: config.KongAuth.Name,
+	}
+
+	req, err := sling.New().Base(url).Post(PluginsPath).BodyForm(jwtParams).Request()
+	resp, err := c.Do(req)
+	if err != nil {
+		s := fmt.Sprintf("Failed to set up jwt authentication.")
+		defer resp.Body.Close()
+		lc.Error(s)
+	} else {
+		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+			lc.Info("Successful to set up jwt authentication")
+		} else {
+			s := fmt.Sprintf("Failed to set up jwt authentication with errorcode %d.", resp.StatusCode)
+			lc.Error(s)
+		}
+	}
 }
 
 func initJWTAuthForRoute(config *tomlConfig, url string, c *http.Client, service string) {

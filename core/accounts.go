@@ -99,7 +99,7 @@ func createTokenForConsumer(config *tomlConfig, user string, url string, name st
 		t, err := createTokenWithOauth2(config, user, url)
 		return t, err
 	}
-	return "", errors.New("unknown authentication method provided.")
+	return "", errors.New("unknown authentication method provided")
 }
 
 func createTokenWithJWT(user string, url string, name string, c *http.Client) (string, error) {
@@ -133,8 +133,8 @@ func createTokenWithJWT(user string, url string, name string, c *http.Client) (s
 }
 
 func createTokenWithOauth2(config *tomlConfig, user string, url string) (string, error) {
-	//curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=edgex.com" --data "client_id=test" -d "client_secret=test"  -d "redirect_uri=http://www.edgex.com/"
-	//curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=test" -d "grant_type=client_credentials" -d "client_secret=test" -d "scope=email"
+	//curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=edgex.com" --data "client_id=user123" -d "client_secret=user123"  -d "redirect_uri=http://www.edgex.com/"
+	//curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=user123" -d "grant_type=client_credentials" -d "client_secret=user123" -d "scope=email"
 
 	url = fmt.Sprintf("http://%s:%s/", config.KongURL.Server, config.KongURL.AdminPort)
 
@@ -147,9 +147,9 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 	token := KongOauth2Token{}
 	ko := &KongConsumerOauth2{
 		Name:         EdgeXService,
-		ClientId:     config.KongAuth.ClientId,
-		ClientSecret: config.KongAuth.ClientSecret,
-		RedirectUri:  config.KongAuth.RedirectUri,
+		ClientID:     user,
+		ClientSecret: user,
+		RedirectURIS: "http://" + EdgeXService,
 	}
 
 	req, err := sling.New().Base(url).Post(fmt.Sprintf("consumers/%s/oauth2", user)).BodyForm(ko).Request()
@@ -164,10 +164,10 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 
 		// obtain token
 		tokenreq := &KongOuath2TokenRequest{
-			ClientId:     config.KongAuth.ClientId,
-			ClientSecret: config.KongAuth.ClientSecret,
-			GrantType:    config.KongAuth.GrantType,
-			Scope:        config.KongAuth.ScopeGranted,
+			ClientId:     user,
+			ClientSecret: user,
+			GrantType:    OAuth2GrantType,
+			Scope:        OAuth2Scopes,
 		}
 
 		url = fmt.Sprintf("https://%s:%s/", config.KongURL.Server, config.KongURL.ApplicationPortSSL)
@@ -176,7 +176,7 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 		req, err := sling.New().Base(url).Post(path).BodyForm(tokenreq).Request()
 		resp, err := client.Do(req)
 		if err != nil {
-			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", config.KongAuth.ClientId, err.Error()))
+			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", user, err.Error()))
 			return "", err
 		}
 		if resp.StatusCode == 200 || resp.StatusCode == 201 {
