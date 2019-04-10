@@ -58,6 +58,6 @@ func createTokenFile(u string, t string, filename string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filename, jdata, 0644)
+	err = ioutil.WriteFile(filename, jdata, 0600)
 	return err
 }

@@ -50,7 +50,7 @@ func initSecurityServices(config *tomlConfig, baseURL string, secretBaseURL stri
 			continue
 		}
 
-		lc.Info(serviceObject.ID)
+		lc.Info(fmt.Sprintf("kong service object ID is %s", serviceObject.ID))
 
 		// create the route using the Host as the same thing as the configured sni
 		routeParams := &KongRoute{
@@ -58,9 +58,6 @@ func initSecurityServices(config *tomlConfig, baseURL string, secretBaseURL stri
 			Name:  service.Name,
 		}
 		initKongRoutes(baseURL, client, routeParams, service.Name)
-
-		//initAuthmethodForRoute(config, baseURL, client, service.Name)
-		//initACLForRoute(config, baseURL, client, service.Name)
 	}
 
 	initAuthmethod(config, baseURL, client)
@@ -75,9 +72,9 @@ func initKongService(url string, c *http.Client, service *KongService) (*KongSer
 
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up proxy service for %s.", service.Name)
-		defer resp.Body.Close()
 		return nil, errors.New(s)
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 201 {
 			lc.Info(fmt.Sprintf("Successful to set up proxy service for %s.", service.Name))
 
@@ -106,8 +103,8 @@ func initACLForRoute(config *tomlConfig, url string, c *http.Client, service str
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up acl.")
 		lc.Error(s)
-		defer resp.Body.Close()
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up acl.")
 		} else {
@@ -128,8 +125,8 @@ func initACL(config *tomlConfig, url string, c *http.Client) {
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up acl.")
 		lc.Error(s)
-		defer resp.Body.Close()
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up acl.")
 		} else {
@@ -153,9 +150,9 @@ func initOAuth2(config *tomlConfig, url string, c *http.Client) {
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up oauth2 authentication with error %s.", err.Error())
-		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up oauth2 authentication.")
 		} else {
@@ -196,9 +193,9 @@ func initOauth2ForService(config *tomlConfig, url string, c *http.Client, servic
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up oauth2 authentication with error %s.", err.Error())
-		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up oauth2 authentication.")
 		} else {
@@ -217,9 +214,9 @@ func initJWTAuth(config *tomlConfig, url string, c *http.Client) {
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up jwt authentication.")
-		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up jwt authentication")
 		} else {
@@ -238,9 +235,9 @@ func initJWTAuthForRoute(config *tomlConfig, url string, c *http.Client, service
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up jwt authentication.")
-		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info("Successful to set up jwt authentication")
 		} else {
@@ -252,14 +249,13 @@ func initJWTAuthForRoute(config *tomlConfig, url string, c *http.Client, service
 
 func initKongRoutes(url string, c *http.Client, r *KongRoute, name string) {
 	routesubpath := "services/" + name + "/routes"
-	lc.Info(routesubpath)
 	req, err := sling.New().Base(url).Post(routesubpath).BodyJSON(r).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to set up routes for %s with error %s.", name, err.Error())
-		defer resp.Body.Close()
 		lc.Error(s)
 	} else {
+		defer resp.Body.Close()
 		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
 			lc.Info(fmt.Sprintf("Successful to set up route for %s.", name))
 		} else {
