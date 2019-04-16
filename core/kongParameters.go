@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.0
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -42,9 +42,8 @@ type KongServiceResponse struct {
 }
 
 type KongRoute struct {
-	Paths   []string             `json:"paths,omitempty"`
-	Hosts   []string             `json:"hosts,omitempty"`
-	Service *KongServiceResponse `json:"service,omitempty"`
+	Paths []string `json:"paths,omitempty"`
+	Name  string   `json:"name,omitempty"`
 }
 
 type KongJWTPlugin struct {
@@ -56,13 +55,15 @@ type KongOAuth2Plugin struct {
 	Scope                   string `url:"config.scopes"`
 	MandatoryScope          string `url:"config.mandatory_scope"`
 	EnableClientCredentials string `url:"config.enable_client_credentials"`
+	EnableGlobalCredentials string `url:"config.global_credentials"`
+	TokenTTL                int    `url:"config.refresh_token_ttl"`
 }
 
 type KongConsumerOauth2 struct {
 	Name         string `url:"name,omitempty"`
-	ClientId     string `url:"client_id,omitempty"`
+	ClientID     string `url:"client_id,omitempty"`
 	ClientSecret string `url:"client_secret,omitempty"`
-	RedirectUri  string `url:"redirect_uri,omitempty"`
+	RedirectURIS string `url:"redirect_uris,omitempty"`
 }
 
 type KongOuath2TokenRequest struct {
@@ -86,11 +87,6 @@ type KongACLPlugin struct {
 type KongBasicAuthPlugin struct {
 	Name            string `url:"name,omitempty"`
 	HideCredentials string `url:"config.hide_credentials,omitempty"`
-}
-
-type KongUser struct {
-	UserName string `url:"username,omitempty"`
-	Group    string `url:"group,omitempty"`
 }
 
 type CertPair struct {

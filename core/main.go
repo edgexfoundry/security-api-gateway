@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.1
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -74,7 +74,6 @@ func main() {
 	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
 
 	checkProxyStatus(proxyBaseURL, client)
-	//checkSecretServiceStatus(secretServiceBaseURL+config.SecretService.HealthcheckPath, client)
 
 	if *initNeeded == true && *resetNeeded == true {
 		lc.Error("can't run initialization and reset at the same time for security service.")
@@ -98,9 +97,13 @@ func main() {
 
 		t, err := createTokenForConsumer(config, *userTobeCreated, proxyBaseURL, EdgeXService, client)
 		if err != nil {
-			lc.Error(fmt.Sprintf("Failed to create jwt token for edgex service due to error %s.", err.Error()))
+			lc.Error(fmt.Sprintf("Failed to create access token for edgex service due to error %s.", err.Error()))
 		} else {
-			fmt.Println(fmt.Sprintf("The JWT for user %s is: %s. Please keep the jwt for accessing edgex services.", *userTobeCreated, t))
+			fmt.Println(fmt.Sprintf("The access token for user %s is: %s. Please keep the token for accessing edgex services.", *userTobeCreated, t))
+			err = createTokenFile(*userTobeCreated, t, "accessToken.json")
+			if err != nil {
+				lc.Error(err.Error())
+			}
 		}
 	}
 

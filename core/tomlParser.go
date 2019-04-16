@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.0
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -38,16 +38,9 @@ type kongurl struct {
 }
 
 type kongauth struct {
-	Name                    string
-	Scopes                  string
-	MandatoryScope          string
-	EnableClientCredentials string
-	ClientId                string
-	ClientSecret            string
-	RedirectUri             string
-	GrantType               string
-	ScopeGranted            string
-	Resource                string
+	Name     string
+	TokenTTL int
+	Resource string
 }
 
 type kongacl struct {

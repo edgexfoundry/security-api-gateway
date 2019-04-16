@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.0
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -25,4 +25,6 @@ const (
 	SecurityService  = "securityservice"
 	EdgeXService     = "edgex.com"
 	VaultToken       = "X-Vault-Token"
+	OAuth2GrantType  = "client_credentials"
+	OAuth2Scopes     = "all"
 )

@@ -35,42 +35,28 @@ make build
 make docker
 ```
 
-### Run the security service
+### Run the security service with docker-compose
 ```
-docker run -v vault-config:/vault/config --network=edgex-network edgexfoundry/docker-edgex-proxy-go
-```
-
-Notice here vault-file is the name of the volume that keeps the root_token for Vault service, which can be checked with 
-``` 
-docker volume ls
-docker volume inspect <volume_name>
-```
-And edgex-network is the name of the private network that edgex containers create, which can be check with 
-```
-docker network ls
-docker network inspect <network_name>
+docker-compose run edgexfoundry/docker-edgex-proxy-go
 ```
 
 ### Other options for security service, E,g, reset the proxy to initial status, create account, delete account
 ```
-docker run --network=edgex-network edgex/proxy -h
-docker run --network=edgex-network edgex/proxy --reset=true
-docker run --network=edgex-network edgex/proxy --useradd=<account> --group=<groupname>
-docker run --network=edgex-network edgex/proxy --userdel=<account>
+docker-compose run edgex-proxy -h
+docker-compose run edgex-proxy --reset=true
+docker-compose run edgex-proxy --useradd=<account> --group=<groupname>
+docker-compose run edgex-proxy --userdel=<account>
 ```
 
 ### Access existing microservice APIs like ping service of command microservice
 ```
-use JWT as query string 
-curl -k -v -H "host: edgex" https://kong-container:8443/command/api/v1/ping?jwt= <JWT from account creation>
-or use JWT in HEADER
-curl -k -v -H "host: edgex" https://kong-container:8443/command/api/v1/ping -H "Authorization: Bearer <JWT from account creation>"
+curl -k -v https://{api-gateway-ip}:8443/command/api/v1/ping -H "Authorization: Bearer <access token from account creation>"
 ```
 
 
  
 ## Community
-- Chat: https://chat.edgexfoundry.org/home
+- Chat: https://edgexfoundry.slack.com/
 - Mainling lists: https://lists.edgexfoundry.org/mailman/listinfo
 
 ## License

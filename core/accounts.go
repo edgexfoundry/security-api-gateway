@@ -12,7 +12,7 @@
  * the License.
  *
  * @author: Tingyu Zeng, Dell
- * @version: 0.1.1
+ * @version: 0.5.0
  *******************************************************************************/
 package main
 
@@ -40,8 +40,9 @@ func createConsumer(user string, group string, url string, service string, c *ht
 		s := "Only a-z and A-Z char are allowed for user name."
 		return errors.New(s)
 	}
-	userNameParams := &KongUser{UserName: user}
-	req, err := sling.New().Base(url).Post(ConsumersPath).BodyForm(userNameParams).Request()
+
+	path := fmt.Sprintf("%s%s", ConsumersPath, user)
+	req, err := sling.New().Base(url).Put(path).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		s := fmt.Sprintf("Failed to create consumer %s for %s service with error %s.", user, service, err.Error())
@@ -60,21 +61,26 @@ func createConsumer(user string, group string, url string, service string, c *ht
 	return errors.New(s)
 }
 
-func associateConsumerWithGroup(user string, group string, url string, c *http.Client) error {
-	acctParams := &KongUser{Group: group}
+func associateConsumerWithGroup(user string, g string, url string, c *http.Client) error {
+
+	type acctParams struct {
+		Group string `url:"group"`
+	}
+
+	acc := acctParams{g}
 	path := fmt.Sprintf("%s%s/acls", ConsumersPath, user)
-	req, err := sling.New().Base(url).Post(path).BodyForm(acctParams).Request()
+	req, err := sling.New().Base(url).Post(path).BodyForm(acc).Request()
 	resp, err := c.Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to associate consumer %s for with group %s with error %s.", user, group, err.Error())
+		s := fmt.Sprintf("Failed to associate consumer %s for with group %s with error %s.", user, g, err.Error())
 		return errors.New(s)
 	}
 	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
-		lc.Info(fmt.Sprintf("Successful to associate consumer %s with group %s.", user, group))
+		lc.Info(fmt.Sprintf("Successful to associate consumer %s with group %s.", user, g))
 		return nil
 	}
 	b, _ := ioutil.ReadAll(resp.Body)
-	s := fmt.Sprintf("Failed to associate consumer %s with group %s with error %s,%s.", user, group, resp.Status, string(b))
+	s := fmt.Sprintf("Failed to associate consumer %s with group %s with error %s,%s.", user, g, resp.Status, string(b))
 	lc.Error(s)
 	return errors.New(s)
 }
@@ -93,7 +99,7 @@ func createTokenForConsumer(config *tomlConfig, user string, url string, name st
 		t, err := createTokenWithOauth2(config, user, url)
 		return t, err
 	}
-	return "", errors.New("unknown authentication method provided.")
+	return "", errors.New("unknown authentication method provided")
 }
 
 func createTokenWithJWT(user string, url string, name string, c *http.Client) (string, error) {
@@ -127,9 +133,8 @@ func createTokenWithJWT(user string, url string, name string, c *http.Client) (s
 }
 
 func createTokenWithOauth2(config *tomlConfig, user string, url string) (string, error) {
-	//curl -X POST "http://localhost:8001/consumers/user123/oauth2" --data "name=test" --data "client_id=test" --data "client_secret=test"  --data "redirect_uri=http://www.yahoo.com/"
-	//curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=test&grant_type=client_credentials" -d "client_secret=test" -d "scope=email"
-	//or curl -k -v https://localhost:8443/oauth2/token -H "host: edgex" "-d "client_id=test&grant_type=client_credentials" -d "client_secret=test" -d "scope=email"
+	//curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=edgex.com" --data "client_id=user123" -d "client_secret=user123"  -d "redirect_uri=http://www.edgex.com/"
+	//curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=user123" -d "grant_type=client_credentials" -d "client_secret=user123" -d "scope=email"
 
 	url = fmt.Sprintf("http://%s:%s/", config.KongURL.Server, config.KongURL.AdminPort)
 
@@ -142,9 +147,9 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 	token := KongOauth2Token{}
 	ko := &KongConsumerOauth2{
 		Name:         EdgeXService,
-		ClientId:     config.KongAuth.ClientId,
-		ClientSecret: config.KongAuth.ClientSecret,
-		RedirectUri:  config.KongAuth.RedirectUri,
+		ClientID:     user,
+		ClientSecret: user,
+		RedirectURIS: "http://" + EdgeXService,
 	}
 
 	req, err := sling.New().Base(url).Post(fmt.Sprintf("consumers/%s/oauth2", user)).BodyForm(ko).Request()
@@ -159,20 +164,19 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 
 		// obtain token
 		tokenreq := &KongOuath2TokenRequest{
-			ClientId:     config.KongAuth.ClientId,
-			ClientSecret: config.KongAuth.ClientSecret,
-			GrantType:    config.KongAuth.GrantType,
-			Scope:        config.KongAuth.ScopeGranted,
+			ClientId:     user,
+			ClientSecret: user,
+			GrantType:    OAuth2GrantType,
+			Scope:        OAuth2Scopes,
 		}
 
 		url = fmt.Sprintf("https://%s:%s/", config.KongURL.Server, config.KongURL.ApplicationPortSSL)
 		path := fmt.Sprintf("%s/oauth2/token", config.KongAuth.Resource)
 		lc.Info(fmt.Sprintf("Creating token on the endpoint of %s", path))
 		req, err := sling.New().Base(url).Post(path).BodyForm(tokenreq).Request()
-		req.Host = EdgeXService
 		resp, err := client.Do(req)
 		if err != nil {
-			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", config.KongAuth.ClientId, err.Error()))
+			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", user, err.Error()))
 			return "", err
 		}
 		if resp.StatusCode == 200 || resp.StatusCode == 201 {
