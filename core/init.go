@@ -75,7 +75,7 @@ func initKongService(url string, c *http.Client, service *KongService) (*KongSer
 		return nil, errors.New(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 201 {
+		if resp.StatusCode == http.StatusCreated {
 			lc.Info(fmt.Sprintf("Successful to set up proxy service for %s.", service.Name))
 
 			serviceObj := KongServiceResponse{}
@@ -84,7 +84,7 @@ func initKongService(url string, c *http.Client, service *KongService) (*KongSer
 				return nil, err
 			}
 			return &serviceObj, nil
-		} else if resp.StatusCode == 409 {
+		} else if resp.StatusCode == http.StatusConflict {
 			return nil, fmt.Errorf("proxy service for %s has been set up", service.Name)
 		} else {
 			return nil, fmt.Errorf("failed to set up proxy service for %s", service.Name)
@@ -105,7 +105,7 @@ func initACLForRoute(config *tomlConfig, url string, c *http.Client, service str
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info("Successful to set up acl.")
 		} else {
 			s := fmt.Sprintf("Failed to set up acl with errorcode %d.", resp.StatusCode)
@@ -127,7 +127,7 @@ func initACL(config *tomlConfig, url string, c *http.Client) {
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info("Successful to set up acl.")
 		} else {
 			s := fmt.Sprintf("Failed to set up acl with errorcode %d.", resp.StatusCode)
@@ -153,7 +153,7 @@ func initOAuth2(config *tomlConfig, url string, c *http.Client) {
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info("Successful to set up oauth2 authentication.")
 		} else {
 			s := fmt.Sprintf("Failed to set up oauth2 authentication with errorcode %d.", resp.StatusCode)
@@ -196,7 +196,7 @@ func initOauth2ForService(config *tomlConfig, url string, c *http.Client, servic
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info("Successful to set up oauth2 authentication.")
 		} else {
 			s := fmt.Sprintf("Failed to set up oauth2 authentication with errorcode %d.", resp.StatusCode)
@@ -217,7 +217,7 @@ func initJWTAuth(config *tomlConfig, url string, c *http.Client) {
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info("Successful to set up jwt authentication")
 		} else {
 			s := fmt.Sprintf("Failed to set up jwt authentication with errorcode %d.", resp.StatusCode)
@@ -238,7 +238,7 @@ func initJWTAuthForRoute(config *tomlConfig, url string, c *http.Client, service
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info("Successful to set up jwt authentication")
 		} else {
 			s := fmt.Sprintf("Failed to set up jwt authentication with errorcode %d.", resp.StatusCode)
@@ -256,7 +256,7 @@ func initKongRoutes(url string, c *http.Client, r *KongRoute, name string) {
 		lc.Error(s)
 	} else {
 		defer resp.Body.Close()
-		if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 			lc.Info(fmt.Sprintf("Successful to set up route for %s.", name))
 		} else {
 			s := fmt.Sprintf("Failed to set up route for %s with error %s.", name, resp.Status)

@@ -31,7 +31,7 @@ func checkProxyStatus(url string, c *http.Client) {
 		lc.Error(fmt.Sprintf("The status of reverse proxy is unknown with error %s, the initialization is terminated.", err.Error()))
 		os.Exit(0)
 	} else {
-		if resp.StatusCode == 200 {
+		if resp.StatusCode == http.StatusOK {
 			lc.Info("Reverse proxy is up successfully.")
 		} else {
 			lc.Error(fmt.Sprintf("The status of reverse proxy is unknown with error code %d, the initialization is terminated.", resp.StatusCode))
@@ -47,7 +47,7 @@ func checkSecretServiceStatus(url string, c *http.Client) {
 		lc.Error("The status of secret service is unknown, the initialization is terminated.")
 		os.Exit(0)
 	} else {
-		if resp.StatusCode == 200 {
+		if resp.StatusCode == http.StatusOK {
 			lc.Info("Secret management service is up successfully.")
 		} else {
 			lc.Error(fmt.Sprintf("Secret management service is down. Please check the status of secret service with endpoint %s.", url))
