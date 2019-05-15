@@ -48,7 +48,7 @@ func createConsumer(user string, group string, url string, service string, c *ht
 		s := fmt.Sprintf("Failed to create consumer %s for %s service with error %s.", user, service, err.Error())
 		return errors.New(s)
 	}
-	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		lc.Info(fmt.Sprintf("Successful to create consumer %s for %s service.", user, service))
 
 		err = associateConsumerWithGroup(user, group, url, c)
@@ -75,7 +75,7 @@ func associateConsumerWithGroup(user string, g string, url string, c *http.Clien
 		s := fmt.Sprintf("Failed to associate consumer %s for with group %s with error %s.", user, g, err.Error())
 		return errors.New(s)
 	}
-	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		lc.Info(fmt.Sprintf("Successful to associate consumer %s with group %s.", user, g))
 		return nil
 	}
@@ -111,7 +111,7 @@ func createTokenWithJWT(user string, url string, name string, c *http.Client) (s
 		errString := fmt.Sprintf("Failed to create jwt token for consumer %s with error %s.", user, err.Error())
 		return "", errors.New(errString)
 	}
-	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		defer resp.Body.Close()
 		json.NewDecoder(resp.Body).Decode(&jwtCred)
 		lc.Info(fmt.Sprintf("successful on retrieving JWT credential for consumer %s.", user))
@@ -158,7 +158,7 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 		lc.Error(fmt.Sprintf("Failed to enable oauth2 authentication for consumer %s with error %s.", user, err.Error()))
 		return "", err
 	}
-	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		defer resp.Body.Close()
 		lc.Info(fmt.Sprintf("successful on enabling oauth2 for consumer %s.", user))
 
@@ -179,7 +179,7 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", user, err.Error()))
 			return "", err
 		}
-		if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
 			defer resp.Body.Close()
 			json.NewDecoder(resp.Body).Decode(&token)
 			lc.Info(fmt.Sprintf("successful on retrieving bearer credential for consumer %s.", user))

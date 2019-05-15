@@ -44,7 +44,7 @@ func loadKongCerts(config *tomlConfig, url string, secretBaseURL string, c *http
 		return err
 	}
 
-	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 409 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		lc.Info("Successful to add certificate to the reverse proxy.")
 		return nil
 	}

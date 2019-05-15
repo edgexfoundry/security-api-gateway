@@ -32,7 +32,7 @@ func deleteResource(id string, url string, path string, endpoint string, c *http
 		lc.Error(s)
 		return errors.New(s)
 	}
-	if resp.StatusCode == 200 || resp.StatusCode == 201 || resp.StatusCode == 204 {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent {
 		lc.Info(fmt.Sprintf("Successful to delete %s at %s.", id, endpoint))
 		return nil
 	}
