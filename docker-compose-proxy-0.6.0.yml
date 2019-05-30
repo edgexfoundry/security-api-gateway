@@ -160,7 +160,7 @@ services:
         - kong-db
 
   edgex-proxy:
-    image: "edgexfoundry/docker-edgex-proxy-go:0.5.0"
+    image: "edgexfoundry/docker-edgex-proxy-go:1.0.0"
     container_name: edgex-proxy
     hostname: edgex-proxy
     networks:
