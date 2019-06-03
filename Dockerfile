@@ -4,9 +4,9 @@ RUN mkdir -p /edgex/res
 
 WORKDIR /edgex
 
-COPY core/res/configuration-docker.toml res/configuration.toml
+COPY cmd/edgexproxy/res/configuration-docker.toml res/configuration.toml
 
-ADD core/edgexproxy .
+ADD cmd/edgexproxy/edgexproxy .
 
 ENTRYPOINT ["./edgexproxy"]
 

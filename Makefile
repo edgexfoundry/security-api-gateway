@@ -16,13 +16,13 @@ GIT_SHA=$(shell git rev-parse HEAD)
 prepare:
 
 build:
-	cd core && $(GO) build  -o  $(MICROSERVICES) .
+	cd cmd/edgexproxy && $(GO) build  -o  $(MICROSERVICES) .
 clean:
-	cd core && rm -f $(MICROSERVICES)
+	cd cmd/edgexproxy && rm $(MICROSERVICES)
 test:
 	
 run:
-	cd core && ./$(MICROSERVICES) init=true
+	cd cmd/edgexproxy && ./$(MICROSERVICES) init=true
 
 docker: $(DOCKERS)
 docker_edgexproxy:
