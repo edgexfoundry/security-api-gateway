@@ -14,29 +14,28 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
-package edgexproxy
+ package edgexproxy
 
-import (
-	"errors"
-	"fmt"
+ import (
 	"net/http"
+	"testing"
+	"fmt"
+	//"github.com/stretchr/testify/assert"
+ )
 
-	"github.com/dghubble/sling"
-)
+ func TestResetProxy( t *testing.T){
+	 c, mux, server := testServer()
+	 defer server.Close()
 
-func deleteResource(id string, url string, path string, endpoint string, c *http.Client) error {
-	req, err := sling.New().Base(url).Path(path).Delete(id).Request()
-	resp, err := c.Do(req)
-	if err != nil {
-		s := fmt.Sprintf("Failed to delete %s at %s with error %s.", id, endpoint, err.Error())
-		lc.Error(s)
-		return errors.New(s)
+	 paths := []string{RoutesPath, ServicesPath, ConsumersPath, PluginsPath, CertificatesPath}
+	 basepath := "http://localhost/"		
+	 for _, p := range paths {
+		 mux.HandleFunc(basepath+p, func(w http.ResponseWriter, r *http.Request) {
+			 assertMethod(t, "GET", r)
+			 w.Header().Set("Content-Type", "text/plain")
+			 fmt.Fprintf(w, "OK")
+		 })
 	}
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent {
-		lc.Info(fmt.Sprintf("Successful to delete %s at %s.", id, endpoint))
-		return nil
-	}
-	s := fmt.Sprintf("Failed to delete %s at %s with errocode %d.", id, endpoint, resp.StatusCode)
-	lc.Error(s)
-	return errors.New(s)
-}
+	
+	ResetProxy(basepath, c)	 
+ }

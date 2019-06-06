@@ -14,27 +14,25 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
-package edgexproxy
+ package edgexproxy
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"net/http"
-
-	"github.com/dghubble/sling"
+ import (
+	"testing"	
 )
 
-func getIDListFromEndpoint(url string, path string, c *http.Client) (DataCollect, error) {
-	req, err := sling.New().Get(url).Path(path).Request()
-	resp, err := c.Do(req)
+var path = "../../../test/tomltest.toml"
+
+func TestLoadTomlConfig(t *testing.T){
+	
+	config, err := LoadTomlConfig(path)
 	if err != nil {
-		s := fmt.Sprintf("Failed to get list of %s with error %s.", path, err.Error())
-		lc.Error(s)
-		return DataCollect{}, errors.New(s)
+		t.Errorf("Failed to parse toml file.")
 	}
-	defer resp.Body.Close()
-	collection := DataCollect{}
-	json.NewDecoder(resp.Body).Decode(&collection)
-	return collection, nil
+	if config.SecretService.TokenPath != "/test/resp-init.json" {
+		t.Errorf("Failed to get correct value for tokenpath in the toml config file.")
+	}
+	if config.EdgexServices["test"].Name != "test" {
+		t.Errorf("Failed to get correct name for test service in the toml config file.")
+	}
+
 }

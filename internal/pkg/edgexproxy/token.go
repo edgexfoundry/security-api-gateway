@@ -22,28 +22,9 @@ import (
 	"io/ioutil"
 )
 
-type Auth struct {
-	Secret Inner `json:"auth"`
-}
-
-type Inner struct {
-	Token string `json:"client_token"`
-}
-
 type userTokenPair struct {
 	User  string
 	Token string
-}
-
-func getSecret(filename string) (string, error) {
-	s := Auth{}
-	raw, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return s.Secret.Token, err
-	}
-
-	err = json.Unmarshal(raw, &s)
-	return s.Secret.Token, err
 }
 
 func CreateTokenFile(u string, t string, filename string) error {

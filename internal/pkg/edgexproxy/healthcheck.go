@@ -30,28 +30,30 @@ func CheckProxyStatus(url string, c *http.Client) {
 	if err != nil {
 		lc.Error(fmt.Sprintf("The status of reverse proxy is unknown with error %s, the initialization is terminated.", err.Error()))
 		os.Exit(0)
-	} else {
-		if resp.StatusCode == http.StatusOK {
+	} 
+	defer resp.Body.Close()
+	
+	if resp.StatusCode == http.StatusOK {
 			lc.Info("Reverse proxy is up successfully.")
 		} else {
 			lc.Error(fmt.Sprintf("The status of reverse proxy is unknown with error code %d, the initialization is terminated.", resp.StatusCode))
 			os.Exit(0)
-		}
-	}
+		}	
 }
 
-func checkSecretServiceStatus(url string, c *http.Client) {
+func CheckSecretServiceStatus(url string, c *http.Client) {
 	req, err := sling.New().Get(url).Request()
 	resp, err := c.Do(req)
 	if err != nil {
 		lc.Error("The status of secret service is unknown, the initialization is terminated.")
 		os.Exit(0)
-	} else {
-		if resp.StatusCode == http.StatusOK {
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode == http.StatusOK {
 			lc.Info("Secret management service is up successfully.")
-		} else {
+	} else {
 			lc.Error(fmt.Sprintf("Secret management service is down. Please check the status of secret service with endpoint %s.", url))
 			os.Exit(0)
-		}
 	}
 }

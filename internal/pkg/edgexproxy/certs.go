@@ -21,9 +21,18 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"io/ioutil"
 
 	"github.com/dghubble/sling"
 )
+
+type Auth struct {
+	Secret Inner `json:"auth"`
+}
+
+type Inner struct {
+	Token string `json:"client_token"`
+}
 
 func loadKongCerts(config *tomlConfig, url string, secretBaseURL string, c *http.Client) error {
 	cert, key, err := getCertKeyPair(config, secretBaseURL, c)
@@ -43,6 +52,7 @@ func loadKongCerts(config *tomlConfig, url string, secretBaseURL string, c *http
 		lc.Error("Failed to upload cert to proxy server with error %s", err.Error())
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		lc.Info("Successful to add certificate to the reverse proxy.")
@@ -73,4 +83,15 @@ func getCertKeyPair(config *tomlConfig, secretBaseURL string, c *http.Client) (s
 	lc.Info(collection.Section.Cert)
 	lc.Info(fmt.Sprintf("successful on retrieving certificate from %s.", config.SecretService.CertPath))
 	return collection.Section.Cert, collection.Section.Key, nil
+}
+
+func getSecret(filename string) (string, error) {
+	s := Auth{}
+	raw, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return s.Secret.Token, err
+	}
+
+	err = json.Unmarshal(raw, &s)
+	return s.Secret.Token, err
 }
