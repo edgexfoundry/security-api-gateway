@@ -177,7 +177,7 @@ func createTokenWithOauth2(config *tomlConfig, user string, url string) (string,
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		defer resp.Body.Close()
+		
 		lc.Info(fmt.Sprintf("successful on enabling oauth2 for consumer %s.", user))
 
 		// obtain token
