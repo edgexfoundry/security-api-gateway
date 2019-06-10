@@ -19,7 +19,7 @@ package edgexproxy
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io/ioutil"	
 )
 
 type userTokenPair struct {
@@ -27,7 +27,15 @@ type userTokenPair struct {
 	Token string
 }
 
-func CreateTokenFile(u string, t string, filename string) error {
+type Writer interface {
+	Save(u string, t string) error
+}
+
+type TokenFileWriter struct {
+	Filename string
+}
+
+func (tf *TokenFileWriter) Save(u string, t string) error {
 
 	data := userTokenPair{
 		User:  u,
@@ -39,6 +47,6 @@ func CreateTokenFile(u string, t string, filename string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filename, jdata, 0600)
+	err = ioutil.WriteFile(tf.Filename, jdata, 0600)
 	return err
 }

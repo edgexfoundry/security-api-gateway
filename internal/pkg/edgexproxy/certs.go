@@ -20,11 +20,26 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"io/ioutil"
-
+	"net/http"
 	"github.com/dghubble/sling"
 )
+
+type CertPair struct {
+	Cert string `json:"cert,omitempty"`
+	Key  string `json:"key,omitempty"`	
+	Request *Requestor
+}
+
+type Requestor struct {	
+	ProxyBaseURL string
+	SecretSvcBaseURL string
+	Client *http.Client 
+}
+
+type CertCollect struct {
+	Section CertPair `json:"data"`
+}
 
 type Auth struct {
 	Secret Inner `json:"auth"`
@@ -34,44 +49,16 @@ type Inner struct {
 	Token string `json:"client_token"`
 }
 
-func loadKongCerts(config *tomlConfig, url string, secretBaseURL string, c *http.Client) error {
-	cert, key, err := getCertKeyPair(config, secretBaseURL, c)
-	if err != nil {
-		return err
-	}
-	body := &CertInfo{
-		Cert: cert,
-		Key:  key,
-		Snis: []string{config.SecretService.SNIS},
-	}
+func (cp *CertPair) init(config *tomlConfig) (string, string, error) {
 
-	lc.Info("Trying to upload cert to proxy server.")
-	req, err := sling.New().Base(url).Post(CertificatesPath).BodyForm(body).Request()
-	resp, err := c.Do(req)
-	if err != nil {
-		lc.Error("Failed to upload cert to proxy server with error %s", err.Error())
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info("Successful to add certificate to the reverse proxy.")
-		return nil
-	}
-
-	return fmt.Errorf("failed to add certificate with errorcode %d", resp.StatusCode)
-}
-
-func getCertKeyPair(config *tomlConfig, secretBaseURL string, c *http.Client) (string, string, error) {
-
-	t, err := getSecret(config.SecretService.TokenPath)
+	t, err := cp.getSecret(config.SecretService.TokenPath)
 	if err != nil {
 		return "", "", err
 	}
 
 	s := sling.New().Set(VaultToken, t)
-	req, err := s.New().Base(secretBaseURL).Get(config.SecretService.CertPath).Request()
-	resp, err := c.Do(req)
+	req, err := s.New().Base(cp.Request.SecretSvcBaseURL).Get(config.SecretService.CertPath).Request()
+	resp, err := cp.Request.Client.Do(req)
 	if err != nil {
 		errStr := fmt.Sprintf("Failed to retrieve certificate with path as %s with error %s", config.SecretService.CertPath, err.Error())
 		return "", "", errors.New(errStr)
@@ -82,10 +69,12 @@ func getCertKeyPair(config *tomlConfig, secretBaseURL string, c *http.Client) (s
 	json.NewDecoder(resp.Body).Decode(&collection)
 	lc.Info(collection.Section.Cert)
 	lc.Info(fmt.Sprintf("successful on retrieving certificate from %s.", config.SecretService.CertPath))
+	cp.Cert = collection.Section.Cert
+	cp.Key = collection.Section.Key
 	return collection.Section.Cert, collection.Section.Key, nil
 }
 
-func getSecret(filename string) (string, error) {
+func (cp *CertPair) getSecret(filename string) (string, error) {
 	s := Auth{}
 	raw, err := ioutil.ReadFile(filename)
 	if err != nil {

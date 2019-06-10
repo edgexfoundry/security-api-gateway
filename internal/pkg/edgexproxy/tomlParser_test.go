@@ -14,16 +14,16 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
- package edgexproxy
+package edgexproxy
 
- import (
-	"testing"	
+import (
+	"testing"
 )
 
 var path = "../../../test/tomltest.toml"
 
-func TestLoadTomlConfig(t *testing.T){
-	
+func TestLoadTomlConfig(t *testing.T) {
+
 	config, err := LoadTomlConfig(path)
 	if err != nil {
 		t.Errorf("Failed to parse toml file.")

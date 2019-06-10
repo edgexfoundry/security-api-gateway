@@ -89,15 +89,6 @@ type KongBasicAuthPlugin struct {
 	HideCredentials string `url:"config.hide_credentials,omitempty"`
 }
 
-type CertPair struct {
-	Cert string `json:"cert,omitempty"`
-	Key  string `json:"key,omitempty"`
-}
-
-type CertCollect struct {
-	Section CertPair `json:"data"`
-}
-
 type CertInfo struct {
 	Cert string   `url:"cert,omitempty"`
 	Key  string   `url:"key,omitempty"`

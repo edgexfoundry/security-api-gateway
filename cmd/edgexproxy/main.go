@@ -75,7 +75,13 @@ func main() {
 	}
 	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
 
-	worker.CheckProxyStatus(proxyBaseURL, client)
+	s := &worker.Service{ProxyServiceURL: proxyBaseURL, SecretServiceURL: secretServiceBaseURL, Client: client }
+
+	err = s.CheckProxyStatus()
+	if err != nil {
+		lc.Error(err.Error())
+		os.Exit(1)
+	}
 
 	if *initNeeded == true && *resetNeeded == true {
 		lc.Error("can't run initialization and reset at the same time for security service.")
@@ -83,33 +89,43 @@ func main() {
 	}
 
 	if *initNeeded == true {
-		worker.InitSecurityServices(config, proxyBaseURL, secretServiceBaseURL, client)
+		s.Init(config)		
 	}
 
 	if *resetNeeded == true {
-		worker.ResetProxy(proxyBaseURL, client)
+		s.ResetProxy()
 	}
 
 	if *userTobeCreated != "" && *userofGroup != "" {
-		err := worker.CreateConsumer(*userTobeCreated, *userofGroup, proxyBaseURL, worker.EdgeXService, client)
+		c := &worker.Consumer{Name: *userTobeCreated, BaseURL: proxyBaseURL, Client: client}
+		err := c.Create(worker.EdgeXService)	
 		if err != nil {
 			lc.Error(err.Error())
 			return
 		}
 
-		t, err := worker.CreateTokenForConsumer(config, *userTobeCreated, proxyBaseURL, worker.EdgeXService, client)
+		err = c.AssociateWithGroup(*userofGroup)		
+		if err != nil {
+			lc.Error(err.Error())
+			return
+		}
+
+		t, err := c.CreateToken(config)
 		if err != nil {
 			lc.Error(fmt.Sprintf("Failed to create access token for edgex service due to error %s.", err.Error()))
-		} else {
-			fmt.Println(fmt.Sprintf("The access token for user %s is: %s. Please keep the token for accessing edgex services.", *userTobeCreated, t))
-			err = worker.CreateTokenFile(*userTobeCreated, t, "accessToken.json")
-			if err != nil {
-				lc.Error(err.Error())
-			}
 		}
-	}
+		
+		fmt.Println(fmt.Sprintf("The access token for user %s is: %s. Please keep the token for accessing edgex services.", *userTobeCreated, t))
+			
+		tf := &worker.TokenFileWriter {Filename: "accessToken.json"}
+		tf.Save(*userTobeCreated, t)			
+		if err != nil {
+			lc.Error(err.Error())
+		}
+	}	
 
 	if *userTobeDeleted != "" {
-		worker.DeleteConsumer(*userTobeDeleted, proxyBaseURL, client)
+		t := &worker.Consumer{Name: *userTobeDeleted, BaseURL: proxyBaseURL, Client: client}
+		t.Delete()		
 	}
 }

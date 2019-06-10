@@ -19,23 +19,23 @@
  import (
 	"net/http"
 	"testing"
-	"fmt"
-	//"github.com/stretchr/testify/assert"
- )
+	"fmt"	
+)
+ var s = &Service{"http://localhost", "http://localhost", &http.Client{}}
+ 
+func TestResetProxy(t *testing.T) {
+	_, mux, server := testServer()
+	defer server.Close()
 
- func TestResetProxy( t *testing.T){
-	 c, mux, server := testServer()
-	 defer server.Close()
-
-	 paths := []string{RoutesPath, ServicesPath, ConsumersPath, PluginsPath, CertificatesPath}
-	 basepath := "http://localhost/"		
-	 for _, p := range paths {
-		 mux.HandleFunc(basepath+p, func(w http.ResponseWriter, r *http.Request) {
-			 assertMethod(t, "GET", r)
-			 w.Header().Set("Content-Type", "text/plain")
-			 fmt.Fprintf(w, "OK")
-		 })
+	paths := []string{RoutesPath, ServicesPath, ConsumersPath, PluginsPath, CertificatesPath}
+	basepath := "http://localhost/"
+	for _, p := range paths {
+		mux.HandleFunc(basepath+p, func(w http.ResponseWriter, r *http.Request) {
+			assertMethod(t, "GET", r)
+			w.Header().Set("Content-Type", "text/plain")
+			fmt.Fprintf(w, "OK")
+		})
 	}
-	
-	ResetProxy(basepath, c)	 
- }
+
+	s.ResetProxy()
+}

@@ -14,18 +14,18 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
- package edgexproxy
+package edgexproxy
 
- import (
+import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
- )
+)
 
- func testServer() (*http.Client, *http.ServeMux, *httptest.Server) {
+func testServer() (*http.Client, *http.ServeMux, *httptest.Server) {
 	mux := http.NewServeMux()
 	server := httptest.NewServer(mux)
 	transport := &RewriteTransport{&http.Transport{
