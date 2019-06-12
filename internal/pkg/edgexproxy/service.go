@@ -48,6 +48,24 @@ func (s *Service) CheckProxyStatus() error {
 	return errors.New(e)
 }
 
+func (s *Service) CheckSecretServiceStatus() error {
+	req, err := sling.New().Get(s.SecretServiceURL).Request()
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		lc.Error("The status of secret service is unknown, the initialization is terminated.")
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		lc.Info("Secret management service is up successfully.")
+		return nil
+	} else {
+		e:=fmt.Sprintf("Secret management service is down. Please check the status of secret service with endpoint %s.", s.SecretServiceURL)
+		return errors.New(e)
+	}
+}
+
 
 func (s *Service) ResetProxy() {
 	paths := []string{RoutesPath, ServicesPath, ConsumersPath, PluginsPath, CertificatesPath}
