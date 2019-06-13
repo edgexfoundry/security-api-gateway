@@ -20,13 +20,12 @@ import (
 	"testing"
 )
 
-var path = "../../../test/tomltest.toml"
-
 func TestLoadTomlConfig(t *testing.T) {
-
+	path := "../../../test/tomltest.toml"
 	config, err := LoadTomlConfig(path)
 	if err != nil {
 		t.Errorf("Failed to parse toml file.")
+		t.Errorf(err.Error())
 	}
 	if config.SecretService.TokenPath != "/test/resp-init.json" {
 		t.Errorf("Failed to get correct value for tokenpath in the toml config file.")

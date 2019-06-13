@@ -170,7 +170,7 @@ func (s *Service) initKongService(service *KongService) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusCreated {
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
 		lc.Info(fmt.Sprintf("successful to set up proxy service for %s", service.Name))
 
 		//serviceObj := KongServiceResponse{}
@@ -181,7 +181,7 @@ func (s *Service) initKongService(service *KongService) error {
 		lc.Info(e)
 		return nil
 	} else {
-		return fmt.Errorf("failed to set up proxy service for %s", service.Name)
+		return fmt.Errorf("failed to set up proxy service for %s with errorcode %d", service.Name, resp.StatusCode)
 	}
 }
 
