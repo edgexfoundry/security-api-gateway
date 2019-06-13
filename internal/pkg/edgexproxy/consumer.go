@@ -197,8 +197,8 @@ func (c *Consumer) createOAuth2Token() (string, error) {
 			return token.AccessToken, nil
 		}
 		b, _ := ioutil.ReadAll(resp.Body)
-		errString := fmt.Sprintf("failed to create bearer token for oauth authentication at endpoint oauth2/token with error %s,%s", resp.Status, string(b))
-		return "", errors.New(errString)
+		e := fmt.Sprintf("failed to create bearer token for oauth authentication at endpoint oauth2/token with error %s,%s", resp.Status, string(b))
+		return "", errors.New(e)
 	}
 
 	e := fmt.Sprintf("failed to enable oauth2 for consumer %s with error code %d", c.Name, resp.StatusCode)

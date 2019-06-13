@@ -68,7 +68,7 @@ func (cs *Certs) getSecret(filename string) (string, error) {
 
 func (cs *Certs) retrieve(t string) (*CertPair, error) {
 	s := sling.New().Set(VaultToken, t)
-	req, err := s.New().Base(cs.Connect.GetProxyBaseURL()).Get(cs.Cfg.GetCertPath()).Request()
+	req, err := s.New().Base(cs.Connect.GetSecretSvcBaseURL()).Get(cs.Cfg.GetCertPath()).Request()
 	resp, err := cs.Connect.GetHttpClient().Do(req)
 	if err != nil {
 		e := fmt.Sprintf("failed to retrieve certificate on path %s with error %s", cs.Cfg.GetCertPath(), err.Error())
@@ -84,7 +84,7 @@ func (cs *Certs) retrieve(t string) (*CertPair, error) {
 
 func (cs *Certs) validate(cc CertCollect) (*CertPair, error) {
 	if len(cc.Pair.Cert) > 0 && len(cc.Pair.Key) > 0 {
-		return &CertPair{cc.Pair.Cert, cc.Pair.Cert}, nil
+		return &CertPair{cc.Pair.Cert, cc.Pair.Key}, nil
 	}
 
 	return &CertPair{"", ""}, errors.New("empty certificate pair")

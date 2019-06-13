@@ -62,15 +62,8 @@ func main() {
 		lc.Info("retrieving config data from Consul")
 	}
 
-	proxyBaseURL := fmt.Sprintf("http://%s:%s/", config.KongURL.Server, config.KongURL.AdminPort)
-	secretServiceBaseURL := fmt.Sprintf("https://%s:%s/", config.SecretService.Server, config.SecretService.Port)
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: *insecureSkipVerify},
-	}
-	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
-
-	er := worker.EdgeXRequestor{ProxyBaseURL: proxyBaseURL, SecretSvcBaseURL: secretServiceBaseURL, Client: client}
+	client := getNewClient(*insecureSkipVerify)
+	er := worker.EdgeXRequestor{ProxyBaseURL: config.GetProxyBaseURL(), SecretSvcBaseURL: config.GetSecretSvcBaseURL(), Client: client}
 	s := &worker.Service{Connect: &er, CertCfg: config, ServiceCfg: config}
 
 	err = s.CheckProxyServiceStatus()
@@ -132,4 +125,11 @@ func main() {
 		t := &worker.Consumer{Name: *userTobeCreated, Connect: &er, Cfg: config}
 		t.Delete()
 	}
+}
+
+func getNewClient(skipVerify bool) *http.Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipVerify},
+	}
+	return &http.Client{Timeout: 10 * time.Second, Transport: tr}
 }

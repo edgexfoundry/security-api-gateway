@@ -17,6 +17,7 @@
 package edgexproxy
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 )
 
@@ -111,10 +112,26 @@ func (cfg *tomlConfig) GetProxyACLWhiteList() string {
 	return cfg.KongACL.WhiteList
 }
 
+func (cfg *tomlConfig) GetSecretSvcName() string {
+	return cfg.SecretService.Server
+}
+
+func (cfg *tomlConfig) GetSecretSvcPort() string {
+	return cfg.SecretService.Port
+}
+
 func (cfg *tomlConfig) GetSecretSvcSNIS() string {
 	return cfg.SecretService.SNIS
 }
 
 func (cfg *tomlConfig) GetEdgeXSvcs() map[string]service {
 	return cfg.EdgexServices
+}
+
+func (cfg *tomlConfig) GetProxyBaseURL() string {
+	return fmt.Sprintf("http://%s:%s/", cfg.GetProxyServerName(), cfg.GetProxyServerPort())
+}
+
+func (cfg *tomlConfig) GetSecretSvcBaseURL() string {
+	return fmt.Sprintf("https://%s:%s/", cfg.GetSecretSvcName(), cfg.GetSecretSvcPort())
 }
