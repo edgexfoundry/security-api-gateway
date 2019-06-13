@@ -14,28 +14,34 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
- package edgexproxy
 
- import (
+package edgexproxy
+
+import (
+	"errors"
+	"fmt"
+	"github.com/dghubble/sling"
 	"net/http"
-	"testing"
-	"fmt"	
 )
- var s = &Service{"http://localhost", "http://localhost", &http.Client{}}
- 
-func TestResetProxy(t *testing.T) {
-	_, mux, server := testServer()
-	defer server.Close()
 
-	paths := []string{RoutesPath, ServicesPath, ConsumersPath, PluginsPath, CertificatesPath}
-	basepath := "http://localhost/"
-	for _, p := range paths {
-		mux.HandleFunc(basepath+p, func(w http.ResponseWriter, r *http.Request) {
-			assertMethod(t, "GET", r)
-			w.Header().Set("Content-Type", "text/plain")
-			fmt.Fprintf(w, "OK")
-		})
+type Resource struct {
+	ID      string
+	Connect Requestor
+}
+
+func (r *Resource) Remove(path string) error {
+	req, err := sling.New().Base(r.Connect.GetProxyBaseURL()).Path(path).Delete(r.ID).Request()
+	resp, err := r.Connect.GetHttpClient().Do(req)
+	if err != nil {
+		e := fmt.Sprintf("failed to delete %s at %s with error %s", r.ID, path, err.Error())
+		return errors.New(e)
 	}
+	defer resp.Body.Close()
 
-	s.ResetProxy()
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent {
+		lc.Info(fmt.Sprintf("successful to delete %s at %s", r.ID, path))
+		return nil
+	}
+	e := fmt.Sprintf("failed to delete %s at %s with errocode %d.", r.ID, path, resp.StatusCode)
+	return errors.New(e)
 }

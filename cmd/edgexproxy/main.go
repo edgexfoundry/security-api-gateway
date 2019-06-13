@@ -54,17 +54,12 @@ func main() {
 
 	config, err := worker.LoadTomlConfig(*configFileLocation)
 	if err != nil {
-		lc.Error("Failed to retrieve config data from local file. Please make sure res/configuration.toml file exists with correct formats.")
+		lc.Error("failed to retrieve config data from local file. Please make sure res/configuration.toml file exists with correct formats")
 		return
 	}
 
 	if *useConsul {
-		lc.Info("Retrieving config data from Consul")
-		//err := metadata.ConnectToConsul(*config)
-		//if err != nil {
-		//	lc.Error("Failed to retrieve config from Consul")
-		//}
-		//lc.Info("Retrieving config data from Consul")
+		lc.Info("retrieving config data from Consul")
 	}
 
 	proxyBaseURL := fmt.Sprintf("http://%s:%s/", config.KongURL.Server, config.KongURL.AdminPort)
@@ -75,57 +70,66 @@ func main() {
 	}
 	client := &http.Client{Timeout: 10 * time.Second, Transport: tr}
 
-	s := &worker.Service{ProxyServiceURL: proxyBaseURL, SecretServiceURL: secretServiceBaseURL, Client: client }
+	er := worker.EdgeXRequestor{ProxyBaseURL: proxyBaseURL, SecretSvcBaseURL: secretServiceBaseURL, Client: client}
+	s := &worker.Service{Connect: &er, CertCfg: config, ServiceCfg: config}
 
-	err = s.CheckProxyStatus()
+	err = s.CheckProxyServiceStatus()
 	if err != nil {
 		lc.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	if *initNeeded == true && *resetNeeded == true {
-		lc.Error("can't run initialization and reset at the same time for security service.")
+		lc.Error("can't run initialization and reset at the same time for security service")
 		return
 	}
 
 	if *initNeeded == true {
-		s.Init(config)		
+		err = s.Init()
+		if err != nil {
+			lc.Error(err.Error())
+		}
 	}
 
 	if *resetNeeded == true {
-		s.ResetProxy()
+		err = s.ResetProxy()
+		if err != nil {
+			lc.Error(err.Error())
+		}
 	}
 
 	if *userTobeCreated != "" && *userofGroup != "" {
-		c := &worker.Consumer{Name: *userTobeCreated, BaseURL: proxyBaseURL, Client: client}
-		err := c.Create(worker.EdgeXService)	
+		c := &worker.Consumer{Name: *userTobeCreated, Connect: &er, Cfg: config}
+
+		err := c.Create(worker.EdgeXService)
 		if err != nil {
 			lc.Error(err.Error())
 			return
 		}
 
-		err = c.AssociateWithGroup(*userofGroup)		
+		err = c.AssociateWithGroup(*userofGroup)
 		if err != nil {
 			lc.Error(err.Error())
 			return
 		}
 
-		t, err := c.CreateToken(config)
+		t, err := c.CreateToken()
 		if err != nil {
-			lc.Error(fmt.Sprintf("Failed to create access token for edgex service due to error %s.", err.Error()))
+			lc.Error(fmt.Sprintf("failed to create access token for edgex service due to error %s", err.Error()))
+			return
 		}
-		
-		fmt.Println(fmt.Sprintf("The access token for user %s is: %s. Please keep the token for accessing edgex services.", *userTobeCreated, t))
-			
-		tf := &worker.TokenFileWriter {Filename: "accessToken.json"}
-		tf.Save(*userTobeCreated, t)			
+
+		fmt.Println(fmt.Sprintf("the access token for user %s is: %s. Please keep the token for accessing edgex services", *userTobeCreated, t))
+
+		tf := &worker.TokenFileWriter{Filename: "accessToken.json"}
+		err = tf.Save(*userTobeCreated, t)
 		if err != nil {
 			lc.Error(err.Error())
 		}
-	}	
+	}
 
 	if *userTobeDeleted != "" {
-		t := &worker.Consumer{Name: *userTobeDeleted, BaseURL: proxyBaseURL, Client: client}
-		t.Delete()		
+		t := &worker.Consumer{Name: *userTobeCreated, Connect: &er, Cfg: config}
+		t.Delete()
 	}
 }

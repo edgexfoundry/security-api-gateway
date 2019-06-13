@@ -67,7 +67,7 @@ type KongConsumerOauth2 struct {
 }
 
 type KongOuath2TokenRequest struct {
-	ClientId     string `url:"client_id,omitempty"`
+	ClientID     string `url:"client_id,omitempty"`
 	ClientSecret string `url:"client_secret,omitempty"`
 	GrantType    string `url:"grant_type,omitempty"`
 	Scope        string `url:"scope,omitempty"`

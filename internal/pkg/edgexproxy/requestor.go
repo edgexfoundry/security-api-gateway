@@ -14,39 +14,32 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
-
 package edgexproxy
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"net/http"
 )
 
-type userTokenPair struct {
-	User  string
-	Token string
+type Requestor interface {
+	GetProxyBaseURL() string
+	GetSecretSvcBaseURL() string
+	GetHttpClient() *http.Client
 }
 
-type Writer interface {
-	Save(u string, t string) error
+type EdgeXRequestor struct {
+	ProxyBaseURL     string
+	SecretSvcBaseURL string
+	Client           *http.Client
 }
 
-type TokenFileWriter struct {
-	Filename string
+func (eq *EdgeXRequestor) GetProxyBaseURL() string {
+	return eq.ProxyBaseURL
 }
 
-func (tf *TokenFileWriter) Save(u string, t string) error {
+func (eq *EdgeXRequestor) GetSecretSvcBaseURL() string {
+	return eq.SecretSvcBaseURL
+}
 
-	data := userTokenPair{
-		User:  u,
-		Token: t,
-	}
-
-	jdata, err := json.MarshalIndent(data, "", " ")
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(tf.Filename, jdata, 0600)
-	return err
+func (eq *EdgeXRequestor) GetHttpClient() *http.Client {
+	return eq.Client
 }

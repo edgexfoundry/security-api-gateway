@@ -14,20 +14,20 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
- package edgexproxy
+package edgexproxy
 
 import (
-	"net/http"
-	"fmt"
-	"errors"
-	"io/ioutil"
-	"encoding/json"
 	"crypto/tls"
-	"time"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/dghubble/sling"
 	jwt "github.com/dgrijalva/jwt-go"
 	logger "github.com/edgexfoundry/go-mod-core-contracts/clients/logger"
 	model "github.com/edgexfoundry/go-mod-core-contracts/models"
+	"io/ioutil"
+	"net/http"
+	"time"
 )
 
 var lc = CreateLogging()
@@ -36,86 +36,93 @@ func CreateLogging() logger.LoggingClient {
 	return logger.NewClient(SecurityService, false, fmt.Sprintf("%s-%s.log", SecurityService, time.Now().Format("2006-01-02")), model.InfoLog)
 }
 
+type Consumer struct {
+	Name    string
+	Connect Requestor
+	Cfg     ConsumerConfig
+}
 
- type Consumer struct {
-	 Name string	 
-	 BaseURL string
-	 Client *http.Client
- }
+type ConsumerConfig interface {
+	GetProxyServerName() string
+	GetProxyServerPort() string
+	GetProxyApplicationPortSSL() string
+	GetProxyAuthMethod() string
+	GetProxyAuthResource() string
+}
 
- type acctParams struct {
+type acctParams struct {
 	Group string `url:"group"`
 }
 
- func (c *Consumer) Delete() error {
-	 return deleteResource(c.Name, c.BaseURL, ConsumersPath, ConsumersPath, c.Client)
- }
+func (c *Consumer) Delete() error {
+	r := &Resource{c.Name, c.Connect}
+	return r.Remove(ConsumersPath)
+}
 
- func (c *Consumer) Create(service string) error {	 
+func (c *Consumer) Create(service string) error {
 	path := fmt.Sprintf("%s%s", ConsumersPath, c.Name)
-	req, err := sling.New().Base(c.BaseURL).Put(path).Request()
-	resp, err := c.Client.Do(req)
+	req, err := sling.New().Base(c.Connect.GetProxyBaseURL()).Put(path).Request()
+	resp, err := c.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to create consumer %s for %s service with error %s.", c.Name, service, err.Error())
-		return errors.New(s)
+		e := fmt.Sprintf("failed to create consumer %s for %s service with error %s", c.Name, service, err.Error())
+		return errors.New(e)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info(fmt.Sprintf("Successful to create consumer %s for %s service.", c.Name, service))
-		return nil 
+		lc.Info(fmt.Sprintf("successful to create consumer %s for %s service", c.Name, service))
+		return nil
 	}
-	s := fmt.Sprintf("Failed to create consumer %s for %s service.", c.Name, service)	
-	return errors.New(s)
- }
+	e := fmt.Sprintf("failed to create consumer %s for %s service", c.Name, service)
+	return errors.New(e)
+}
 
- func (c *Consumer) AssociateWithGroup(g string) error {
-		
+func (c *Consumer) AssociateWithGroup(g string) error {
 	acc := acctParams{g}
 	path := fmt.Sprintf("%s%s/acls", ConsumersPath, c.Name)
-	req, err := sling.New().Base(c.BaseURL).Post(path).BodyForm(acc).Request()
-	resp, err := c.Client.Do(req)
+	req, err := sling.New().Base(c.Connect.GetProxyBaseURL()).Post(path).BodyForm(acc).Request()
+	resp, err := c.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to associate consumer %s for with group %s with error %s.", c.Name, g, err.Error())
-		return errors.New(s)
+		e := fmt.Sprintf("failed to associate consumer %s for with group %s with error %s", c.Name, g, err.Error())
+		return errors.New(e)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info(fmt.Sprintf("Successful to associate consumer %s with group %s.", c.Name, g))
+		lc.Info(fmt.Sprintf("successful to associate consumer %s with group %s", c.Name, g))
 		return nil
 	}
 	b, _ := ioutil.ReadAll(resp.Body)
-	s := fmt.Sprintf("Failed to associate consumer %s with group %s with error %s,%s.", c.Name, g, resp.Status, string(b))
-	lc.Error(s)
-	return errors.New(s)
- }
+	e := fmt.Sprintf("failed to associate consumer %s with group %s with error %s,%s", c.Name, g, resp.Status, string(b))
+	lc.Error(e)
+	return errors.New(e)
+}
 
- func (c *Consumer) CreateToken(config *tomlConfig) (string, error) {
-	if config.KongAuth.Name == "jwt" {
+func (c *Consumer) CreateToken() (string, error) {
+	if c.Cfg.GetProxyAuthMethod() == "jwt" {
 		lc.Info("autheticate the user with jwt authentication.")
-		return c.createJWTToken()	
-	} else if config.KongAuth.Name == "oauth2" {
+		return c.createJWTToken()
+	} else if c.Cfg.GetProxyAuthMethod() == "oauth2" {
 		lc.Info("authenticate the user with oauth2 authentication.")
-		return c.createOAuth2Token(config)		
+		return c.createOAuth2Token()
 	}
 	return "", errors.New("unknown authentication method provided")
- }
+}
 
- func (c *Consumer) createJWTToken() (string, error) {
+func (c *Consumer) createJWTToken() (string, error) {
 	jwtCred := JWTCred{}
 	s := sling.New().Set("Content-Type", "application/x-www-form-urlencoded")
-	req, err := s.New().Get(c.BaseURL).Post(fmt.Sprintf("consumers/%s/jwt", c.Name)).Request()
-	resp, err := c.Client.Do(req)
+	req, err := s.New().Get(c.Connect.GetProxyBaseURL()).Post(fmt.Sprintf("consumers/%s/jwt", c.Name)).Request()
+	resp, err := c.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		errString := fmt.Sprintf("Failed to create jwt token for consumer %s with error %s.", c.Name, err.Error())
-		return "", errors.New(errString)
+		e := fmt.Sprintf("failed to create jwt token for consumer %s with error %s", c.Name, err.Error())
+		return "", errors.New(e)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {		
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
 		json.NewDecoder(resp.Body).Decode(&jwtCred)
-		lc.Info(fmt.Sprintf("successful on retrieving JWT credential for consumer %s.", c.Name))
+		lc.Info(fmt.Sprintf("successful on retrieving JWT credential for consumer %s", c.Name))
 
 		// Create the Claims
 		claims := KongJWTClaims{
@@ -129,15 +136,15 @@ func CreateLogging() logger.LoggingClient {
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 		return token.SignedString([]byte(jwtCred.Secret))
 	}
-	errString := fmt.Sprintf("Failed to create JWT for consumer %s with errorCode %d.", c.Name, resp.StatusCode)
-	return "", errors.New(errString)
- }
+	e := fmt.Sprintf("failed to create JWT for consumer %s with errorCode %d", c.Name, resp.StatusCode)
+	return "", errors.New(e)
+}
 
 //curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=edgex.com" --data "client_id=user123" -d "client_secret=user123"  -d "redirect_uri=http://www.edgex.com/"
 //curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=user123" -d "grant_type=client_credentials" -d "client_secret=user123" -d "scope=email"
- func (c *Consumer) createOAuth2Token(config *tomlConfig) (string, error) {
-	
-	url := fmt.Sprintf("http://%s:%s/", config.KongURL.Server, config.KongURL.AdminPort)
+func (c *Consumer) createOAuth2Token() (string, error) {
+
+	url := fmt.Sprintf("http://%s:%s/", c.Cfg.GetProxyServerName(), c.Cfg.GetProxyServerPort())
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -156,29 +163,29 @@ func CreateLogging() logger.LoggingClient {
 	req, err := sling.New().Base(url).Post(fmt.Sprintf("consumers/%s/oauth2", c.Name)).BodyForm(ko).Request()
 	resp, err := client.Do(req)
 	if err != nil {
-		lc.Error(fmt.Sprintf("Failed to enable oauth2 authentication for consumer %s with error %s.", c.Name, err.Error()))
+		lc.Error(fmt.Sprintf("failed to enable oauth2 authentication for consumer %s with error %s", c.Name, err.Error()))
 		return "", err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info(fmt.Sprintf("successful on enabling oauth2 for consumer %s.", c.Name))
+		lc.Info(fmt.Sprintf("successful on enabling oauth2 for consumer %s", c.Name))
 
 		// obtain token
 		tokenreq := &KongOuath2TokenRequest{
-			ClientId:     c.Name,
+			ClientID:     c.Name,
 			ClientSecret: c.Name,
 			GrantType:    OAuth2GrantType,
 			Scope:        OAuth2Scopes,
 		}
 
-		url = fmt.Sprintf("https://%s:%s/", config.KongURL.Server, config.KongURL.ApplicationPortSSL)
-		path := fmt.Sprintf("%s/oauth2/token", config.KongAuth.Resource)
-		lc.Info(fmt.Sprintf("Creating token on the endpoint of %s", path))
+		url = fmt.Sprintf("https://%s:%s/", c.Cfg.GetProxyServerName(), c.Cfg.GetProxyApplicationPortSSL())
+		path := fmt.Sprintf("%s/oauth2/token", c.Cfg.GetProxyAuthResource())
+		lc.Info(fmt.Sprintf("creating token on the endpoint of %s", path))
 		req, err := sling.New().Base(url).Post(path).BodyForm(tokenreq).Request()
 		resp, err := client.Do(req)
 		if err != nil {
-			lc.Error(fmt.Sprintf("Failed to create oauth2 token for client_id %s with error %s.", c.Name, err.Error()))
+			lc.Error(fmt.Sprintf("failed to create oauth2 token for client_id %s with error %s", c.Name, err.Error()))
 			return "", err
 		}
 		defer resp.Body.Close()
@@ -186,14 +193,14 @@ func CreateLogging() logger.LoggingClient {
 		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated {
 			defer resp.Body.Close()
 			json.NewDecoder(resp.Body).Decode(&token)
-			lc.Info(fmt.Sprintf("successful on retrieving bearer credential for consumer %s.", c.Name))
+			lc.Info(fmt.Sprintf("successful on retrieving bearer credential for consumer %s", c.Name))
 			return token.AccessToken, nil
 		}
 		b, _ := ioutil.ReadAll(resp.Body)
-		errString := fmt.Sprintf("Failed to create bearer token for oauth authentication at endpoint oauth2/token with error %s,%s.", resp.Status, string(b))
+		errString := fmt.Sprintf("failed to create bearer token for oauth authentication at endpoint oauth2/token with error %s,%s", resp.Status, string(b))
 		return "", errors.New(errString)
 	}
 
-	errString := fmt.Sprintf("Failed to enable oauth2 for consumer %s with error code %d.", c.Name, resp.StatusCode)
-	return "", errors.New(errString)
- }
+	e := fmt.Sprintf("failed to enable oauth2 for consumer %s with error code %d", c.Name, resp.StatusCode)
+	return "", errors.New(e)
+}

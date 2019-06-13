@@ -20,67 +20,72 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"github.com/dghubble/sling"
+	"io/ioutil"
 )
 
-type CertPair struct {
-	Cert string `json:"cert,omitempty"`
-	Key  string `json:"key,omitempty"`	
-	Request *Requestor
+type CertConfig interface {
+	GetCertPath() string
+	GetTokenPath() string
 }
 
-type Requestor struct {	
-	ProxyBaseURL string
-	SecretSvcBaseURL string
-	Client *http.Client 
+type Certs struct {
+	Connect Requestor
+	Cfg     CertConfig
 }
 
 type CertCollect struct {
-	Section CertPair `json:"data"`
+	Pair CertPair `json:"data"`
 }
 
-type Auth struct {
-	Secret Inner `json:"auth"`
+type CertPair struct {
+	Cert string `json:"cert,omitempty"`
+	Key  string `json:"key,omitempty"`
 }
 
-type Inner struct {
-	Token string `json:"client_token"`
+type auth struct {
+	Token string `json:"root_token"`
 }
 
-func (cp *CertPair) init(config *tomlConfig) (string, string, error) {
-
-	t, err := cp.getSecret(config.SecretService.TokenPath)
+func (cs *Certs) getCertPair() (*CertPair, error) {
+	t, err := cs.getSecret(cs.Cfg.GetTokenPath())
 	if err != nil {
-		return "", "", err
+		return &CertPair{"", ""}, err
+	}
+	return cs.retrieve(t)
+}
+
+func (cs *Certs) getSecret(filename string) (string, error) {
+	a := auth{}
+	raw, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return a.Token, err
 	}
 
+	err = json.Unmarshal(raw, &a)
+	return a.Token, err
+}
+
+func (cs *Certs) retrieve(t string) (*CertPair, error) {
 	s := sling.New().Set(VaultToken, t)
-	req, err := s.New().Base(cp.Request.SecretSvcBaseURL).Get(config.SecretService.CertPath).Request()
-	resp, err := cp.Request.Client.Do(req)
+	req, err := s.New().Base(cs.Connect.GetProxyBaseURL()).Get(cs.Cfg.GetCertPath()).Request()
+	resp, err := cs.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		errStr := fmt.Sprintf("Failed to retrieve certificate with path as %s with error %s", config.SecretService.CertPath, err.Error())
-		return "", "", errors.New(errStr)
+		e := fmt.Sprintf("failed to retrieve certificate on path %s with error %s", cs.Cfg.GetCertPath(), err.Error())
+		lc.Info(e)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	collection := CertCollect{}
-	json.NewDecoder(resp.Body).Decode(&collection)
-	lc.Info(collection.Section.Cert)
-	lc.Info(fmt.Sprintf("successful on retrieving certificate from %s.", config.SecretService.CertPath))
-	cp.Cert = collection.Section.Cert
-	cp.Key = collection.Section.Key
-	return collection.Section.Cert, collection.Section.Key, nil
+	cc := CertCollect{}
+	json.NewDecoder(resp.Body).Decode(&cc)
+	return cs.validate(cc)
 }
 
-func (cp *CertPair) getSecret(filename string) (string, error) {
-	s := Auth{}
-	raw, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return s.Secret.Token, err
+func (cs *Certs) validate(cc CertCollect) (*CertPair, error) {
+	if len(cc.Pair.Cert) > 0 && len(cc.Pair.Key) > 0 {
+		return &CertPair{cc.Pair.Cert, cc.Pair.Cert}, nil
 	}
 
-	err = json.Unmarshal(raw, &s)
-	return s.Secret.Token, err
+	return &CertPair{"", ""}, errors.New("empty certificate pair")
 }

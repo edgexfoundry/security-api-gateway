@@ -14,83 +14,83 @@
  * @author: Tingyu Zeng, Dell
  * @version: 1.0.0
  *******************************************************************************/
- package edgexproxy
+package edgexproxy
 
- import (
-	"net/http"
-	"fmt"
+import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/dghubble/sling"
- )
+	"net/http"
+)
 
- type Service struct {
-	 ProxyServiceURL string
-	 SecretServiceURL string
-	 Client *http.Client
- }
+type Service struct {
+	Connect    Requestor
+	CertCfg    CertConfig
+	ServiceCfg ServiceConfig
+}
 
-func (s *Service) CheckProxyStatus() error {
-	req, err := sling.New().Get(s.ProxyServiceURL).Request()
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		lc.Error(fmt.Sprintf("The status of reverse proxy is unknown with error %s, the initialization is terminated.", err.Error()))
-		return err
-	}
-	defer resp.Body.Close()
+type ServiceConfig interface {
+	GetProxyAuthMethod() string
+	GetProxyAuthTTL() int
+	GetProxyAuthResource() string
+	GetProxyACLName() string
+	GetProxyACLWhiteList() string
+	GetSecretSvcSNIS() string
+	GetEdgeXSvcs() map[string]service
+}
 
-	if resp.StatusCode == http.StatusOK {
-		lc.Info("Reverse proxy is up successfully.")
-		return nil
-	} 
-
-	e := fmt.Sprintf("The status of reverse proxy is unknown with error code %d, the initialization is terminated.", resp.StatusCode)
-	return errors.New(e)
+func (s *Service) CheckProxyServiceStatus() error {
+	return s.checkServiceStatus(s.Connect.GetProxyBaseURL())
 }
 
 func (s *Service) CheckSecretServiceStatus() error {
-	req, err := sling.New().Get(s.SecretServiceURL).Request()
-	resp, err := s.Client.Do(req)
+	return s.checkServiceStatus(s.Connect.GetSecretSvcBaseURL())
+}
+
+func (s *Service) checkServiceStatus(path string) error {
+	req, err := sling.New().Get(path).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		lc.Error("The status of secret service is unknown, the initialization is terminated.")
-		return err
+		e := fmt.Sprintf("the status of service on %s is unknown, the initialization is terminated", path)
+		return errors.New(e)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		lc.Info("Secret management service is up successfully.")
+		lc.Info(fmt.Sprintf("the service on %s is up successfully", path))
 		return nil
-	} else {
-		e:=fmt.Sprintf("Secret management service is down. Please check the status of secret service with endpoint %s.", s.SecretServiceURL)
-		return errors.New(e)
 	}
+
+	e := fmt.Sprintf("the service on %s is down", path)
+	return errors.New(e)
 }
 
-
-func (s *Service) ResetProxy() {
+func (s *Service) ResetProxy() error {
 	paths := []string{RoutesPath, ServicesPath, ConsumersPath, PluginsPath, CertificatesPath}
-	for _, p := range paths {
-		d, err := s.getIDListFromEndpoint(p)
+	for _, path := range paths {
+		d, err := s.getSvcIDs(path)
 		if err != nil {
-			lc.Error(err.Error())
-		} else {
-			for _, c := range d.Section {
-				err = deleteResource(c.ID, s.ProxyServiceURL, p, p, s.Client)
-				if err != nil {
-					lc.Error(err.Error())
-				}
+			return err
+		}
+		for _, c := range d.Section {
+			r := &Resource{c.ID, s.Connect}
+			err = r.Remove(path)
+			if err != nil {
+				return err
 			}
 		}
 	}
+	return nil
 }
 
-func (s *Service) Init(config *tomlConfig) {	
-	err := s.loadCert(config)
+func (s *Service) Init() error {
+	err := s.loadCert()
 	if err != nil {
-		lc.Error(err.Error())
+		return err
 	}
 
-	for _, service := range config.EdgexServices {
+	for _, service := range s.ServiceCfg.GetEdgeXSvcs() {
 		serviceParams := &KongService{
 			Name:     service.Name,
 			Host:     service.Host,
@@ -98,209 +98,211 @@ func (s *Service) Init(config *tomlConfig) {
 			Protocol: service.Protocol,
 		}
 
-		// create the kong service first so that we get the service ID that is associated with the route
-		serviceObject, err := s.initKongService(serviceParams)
+		err := s.initKongService(serviceParams)
 		if err != nil {
-			lc.Info(err.Error())
-			continue
+			return err
 		}
 
-		lc.Info(fmt.Sprintf("kong service object ID is %s", serviceObject.ID))
-
-		// create the route using the Host as the same thing as the configured sni
 		routeParams := &KongRoute{
 			Paths: []string{"/" + service.Name},
 			Name:  service.Name,
 		}
-		s.initKongRoutes(routeParams, service.Name)
+		err = s.initKongRoutes(routeParams, service.Name)
+		if err != nil {
+			return err
+		}
 	}
 
-	s.initAuthmethod(config)
-	s.initACL(config)
+	err = s.initAuthmethod(s.ServiceCfg.GetProxyAuthMethod(), s.ServiceCfg.GetProxyAuthTTL())
+	if err != nil {
+		return err
+	}
 
-	lc.Info("Finishing initialization for reverse proxy.")
+	err = s.initACL(s.ServiceCfg.GetProxyACLName(), s.ServiceCfg.GetProxyACLWhiteList())
+	if err != nil {
+		return err
+	}
+
+	lc.Info("finishing initialization for reverse proxy")
+	return nil
 }
 
-func (s *Service) loadCert(config *tomlConfig) error {
-	cp := &CertPair{"", "", &Requestor{s.ProxyServiceURL, s.SecretServiceURL, s.Client}}		
-	cert, key, err := cp.init(config)
+func (s *Service) loadCert() error {
+	cp, err := s.getCertPair()
 	if err != nil {
 		return err
 	}
 	body := &CertInfo{
-		Cert: cert,
-		Key:  key,
-		Snis: []string{config.SecretService.SNIS},
+		Cert: cp.Cert,
+		Key:  cp.Key,
+		Snis: []string{s.ServiceCfg.GetSecretSvcSNIS()},
 	}
 
-	lc.Info("Trying to upload cert to proxy server.")
-	req, err := sling.New().Base(s.ProxyServiceURL).Post(CertificatesPath).BodyForm(body).Request()
-	resp, err := s.Client.Do(req)
+	lc.Info("trying to upload cert to proxy server")
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(CertificatesPath).BodyForm(body).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		lc.Error("Failed to upload cert to proxy server with error %s", err.Error())
+		lc.Error("failed to upload cert to proxy server with error %s", err.Error())
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info("Successful to add certificate to the reverse proxy.")
+		lc.Info("successful to add certificate to the reverse proxy")
 		return nil
 	}
 
 	return fmt.Errorf("failed to add certificate with errorcode %d", resp.StatusCode)
 }
 
-func (s *Service) initKongService(service *KongService) (*KongServiceResponse, error) {
-	req, err := sling.New().Base(s.ProxyServiceURL).Post(ServicesPath).BodyForm(service).Request()
-	resp, err := s.Client.Do(req)
+func (s *Service) getCertPair() (*CertPair, error) {
+	c := &Certs{s.Connect, s.CertCfg}
+	return c.getCertPair()
+}
+
+func (s *Service) initKongService(service *KongService) error {
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(ServicesPath).BodyForm(service).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 
 	if err != nil {
-		s := fmt.Sprintf("Failed to set up proxy service for %s.", service.Name)
-		return nil, errors.New(s)
-	} 
+		e := fmt.Sprintf("failed to set up proxy service for %s", service.Name)
+		return errors.New(e)
+	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == http.StatusCreated {
-			lc.Info(fmt.Sprintf("Successful to set up proxy service for %s.", service.Name))
+		lc.Info(fmt.Sprintf("successful to set up proxy service for %s", service.Name))
 
-			serviceObj := KongServiceResponse{}
-			err = json.NewDecoder(resp.Body).Decode(&serviceObj)
-			if err != nil {
-				return nil, err
-			}
-			return &serviceObj, nil
-		} else if resp.StatusCode == http.StatusConflict {
-			return nil, fmt.Errorf("proxy service for %s has been set up", service.Name)
-		} else {
-			return nil, fmt.Errorf("failed to set up proxy service for %s", service.Name)
+		//serviceObj := KongServiceResponse{}
+		//err = json.NewDecoder(resp.Body).Decode(&serviceObj)
+		return nil
+	} else if resp.StatusCode == http.StatusConflict {
+		e := fmt.Sprintf("proxy service for %s has been set up", service.Name)
+		lc.Info(e)
+		return nil
+	} else {
+		return fmt.Errorf("failed to set up proxy service for %s", service.Name)
 	}
 }
 
-
-func (s *Service) initKongRoutes(r *KongRoute, name string) {
+func (s *Service) initKongRoutes(r *KongRoute, name string) error {
 	routesubpath := "services/" + name + "/routes"
-	req, err := sling.New().Base(s.ProxyServiceURL).Post(routesubpath).BodyJSON(r).Request()
-	resp, err := s.Client.Do(req)
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(routesubpath).BodyJSON(r).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to set up routes for %s with error %s.", name, err.Error())
-		lc.Error(s)		
+		e := fmt.Sprintf("failed to set up routes for %s with error %s", name, err.Error())
+		lc.Info(e)
+		return err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info(fmt.Sprintf("Successful to set up route for %s.", name))
-	} else {
-		s := fmt.Sprintf("Failed to set up route for %s with error %s.", name, resp.Status)
-		lc.Error(s)	
+		lc.Info(fmt.Sprintf("successful to set up route for %s", name))
+		return nil
 	}
+
+	e := fmt.Sprintf("failed to set up route for %s with error %s", name, resp.Status)
+	lc.Error(e)
+	return errors.New(e)
 }
 
-func (s *Service) initACL(config *tomlConfig) {
-	lc.Info("Enabling global ACL for api gateway route.")
+func (s *Service) initACL(name string, whitelist string) error {
 	aclParams := &KongACLPlugin{
-		Name:      config.KongACL.Name,
-		WhiteList: config.KongACL.WhiteList,
+		Name:      name,
+		WhiteList: whitelist,
 	}
-	req, err := sling.New().Base(s.ProxyServiceURL).Post(PluginsPath).BodyForm(aclParams).Request()
-	resp, err := s.Client.Do(req)
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(PluginsPath).BodyForm(aclParams).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to set up acl.")
-		lc.Error(s)
-	} 
+		e := fmt.Sprintf("failed to set up acl")
+		lc.Error(e)
+		return err
+	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info("Successful to set up acl.")
-	} else {
-		s := fmt.Sprintf("Failed to set up acl with errorcode %d.", resp.StatusCode)
-		lc.Error(s)
+		lc.Info("successful to set up acl")
+		return nil
 	}
+
+	e := fmt.Sprintf("failed to set up acl with errorcode %d", resp.StatusCode)
+	lc.Error(e)
+	return errors.New(e)
 }
 
-func (s *Service) initAuthmethod(config *tomlConfig) {
-	lc.Info(fmt.Sprintf("selected auth method as %s.", config.KongAuth.Name))
-	if config.KongAuth.Name == "jwt" {
-		s.initJWTAuth(config)
-	} else if config.KongAuth.Name == "oauth2" {
-		s.initOAuth2(config)
+func (s *Service) initAuthmethod(name string, ttl int) error {
+	lc.Info(fmt.Sprintf("selected auth method as %s.", name))
+	if name == "jwt" {
+		return s.initJWTAuth()
+	} else if name == "oauth2" {
+		return s.initOAuth2(ttl)
 	}
+	return errors.New("unsupported authetication method")
 }
 
-func (s *Service) initJWTAuth(config *tomlConfig) {
+func (s *Service) initJWTAuth() error {
 	jwtParams := &KongJWTPlugin{
-		Name: config.KongAuth.Name,
+		Name: "jwt",
 	}
 
-	req, err := sling.New().Base(s.ProxyServiceURL).Post(PluginsPath).BodyForm(jwtParams).Request()
-	resp, err := s.Client.Do(req)
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(PluginsPath).BodyForm(jwtParams).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to set up jwt authentication.")
-		lc.Error(s)
-	} 
-	defer resp.Body.Close()
-	
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-		lc.Info("Successful to set up jwt authentication")
-	} else {
-		s := fmt.Sprintf("Failed to set up jwt authentication with errorcode %d.", resp.StatusCode)
-		lc.Error(s)
+		e := fmt.Sprintf("failed to set up jwt authentication")
+		lc.Error(e)
+		return err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
+		lc.Info("successful to set up jwt authentication")
+		return nil
+	}
+
+	e := fmt.Sprintf("failed to set up jwt authentication with errorcode %d", resp.StatusCode)
+	lc.Error(e)
+	return errors.New(e)
 }
 
-
-func (s *Service) initOAuth2(config *tomlConfig) {
+func (s *Service) initOAuth2(ttl int) error {
 	oauth2Params := &KongOAuth2Plugin{
-		Name:                    config.KongAuth.Name,
+		Name:                    "oauth2",
 		Scope:                   OAuth2Scopes,
 		MandatoryScope:          "true",
 		EnableClientCredentials: "true",
 		EnableGlobalCredentials: "true",
-		TokenTTL:                config.KongAuth.TokenTTL,
+		TokenTTL:                ttl,
 	}
 
-	req, err := sling.New().Base(s.ProxyServiceURL).Post(PluginsPath).BodyForm(oauth2Params).Request()
-	resp, err := s.Client.Do(req)
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(PluginsPath).BodyForm(oauth2Params).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to set up oauth2 authentication with error %s.", err.Error())
-		lc.Error(s)
+		e := fmt.Sprintf("failed to set up oauth2 authentication with error %s", err.Error())
+		lc.Error(e)
+		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-			lc.Info("Successful to set up oauth2 authentication.")
-	} else {
-		s := fmt.Sprintf("Failed to set up oauth2 authentication with errorcode %d.", resp.StatusCode)
-		lc.Error(s)
+		lc.Info("successful to set up oauth2 authentication")
+		return nil
 	}
+
+	e := fmt.Sprintf("failed to set up oauth2 authentication with errorcode %d", resp.StatusCode)
+	lc.Error(e)
+	return errors.New(e)
 }
 
-func (s *Service) getIDListFromEndpoint(path string) (DataCollect, error) {
+func (s *Service) getSvcIDs(path string) (DataCollect, error) {
 	collection := DataCollect{}
 
-	req, err := sling.New().Get(s.ProxyServiceURL).Path(path).Request()
-	resp, err := s.Client.Do(req)
+	req, err := sling.New().Get(s.Connect.GetProxyBaseURL()).Path(path).Request()
+	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
-		s := fmt.Sprintf("Failed to get list of %s with error %s.", path, err.Error())
-		return collection, errors.New(s)
+		e := fmt.Sprintf("failed to get list of %s with error %s", path, err.Error())
+		return collection, errors.New(e)
 	}
 	defer resp.Body.Close()
 
 	json.NewDecoder(resp.Body).Decode(&collection)
 	return collection, nil
-}
-
-func deleteResource(id string, url string, path string, endpoint string, c *http.Client) error {
-	req, err := sling.New().Base(url).Path(path).Delete(id).Request()
-	resp, err := c.Do(req)
-	if err != nil {
-		s := fmt.Sprintf("Failed to delete %s at %s with error %s.", id, endpoint, err.Error())
-		return errors.New(s)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent {
-		lc.Info(fmt.Sprintf("Successful to delete %s at %s.", id, endpoint))
-		return nil
-	}
-	s := fmt.Sprintf("Failed to delete %s at %s with errocode %d.", id, endpoint, resp.StatusCode)
-	return errors.New(s)
 }

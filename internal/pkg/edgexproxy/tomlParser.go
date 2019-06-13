@@ -70,3 +70,51 @@ func LoadTomlConfig(path string) (*tomlConfig, error) {
 	_, err := toml.DecodeFile(path, &config)
 	return &config, err
 }
+
+func (cfg *tomlConfig) GetCertPath() string {
+	return cfg.SecretService.CertPath
+}
+
+func (cfg *tomlConfig) GetTokenPath() string {
+	return cfg.SecretService.TokenPath
+}
+
+func (cfg *tomlConfig) GetProxyServerName() string {
+	return cfg.KongURL.Server
+}
+
+func (cfg *tomlConfig) GetProxyServerPort() string {
+	return cfg.KongURL.AdminPort
+}
+
+func (cfg *tomlConfig) GetProxyApplicationPortSSL() string {
+	return cfg.KongURL.ApplicationPortSSL
+}
+
+func (cfg *tomlConfig) GetProxyAuthMethod() string {
+	return cfg.KongAuth.Name
+}
+
+func (cfg *tomlConfig) GetProxyAuthTTL() int {
+	return cfg.KongAuth.TokenTTL
+}
+
+func (cfg *tomlConfig) GetProxyAuthResource() string {
+	return cfg.KongAuth.Resource
+}
+
+func (cfg *tomlConfig) GetProxyACLName() string {
+	return cfg.KongACL.Name
+}
+
+func (cfg *tomlConfig) GetProxyACLWhiteList() string {
+	return cfg.KongACL.WhiteList
+}
+
+func (cfg *tomlConfig) GetSecretSvcSNIS() string {
+	return cfg.SecretService.SNIS
+}
+
+func (cfg *tomlConfig) GetEdgeXSvcs() map[string]service {
+	return cfg.EdgexServices
+}
