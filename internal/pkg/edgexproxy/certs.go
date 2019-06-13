@@ -52,7 +52,15 @@ func (cs *Certs) getCertPair() (*CertPair, error) {
 	if err != nil {
 		return &CertPair{"", ""}, err
 	}
-	return cs.retrieve(t)
+	cp, err := cs.retrieve(t)
+	if err != nil {
+		return &CertPair{"", ""}, err
+	}
+	err = cs.validate(cp)
+	if err != nil {
+		return &CertPair{"", ""}, err
+	}
+	return cp, nil
 }
 
 func (cs *Certs) getSecret(filename string) (string, error) {
@@ -79,13 +87,12 @@ func (cs *Certs) retrieve(t string) (*CertPair, error) {
 
 	cc := CertCollect{}
 	json.NewDecoder(resp.Body).Decode(&cc)
-	return cs.validate(cc)
+	return &cc.Pair, nil
 }
 
-func (cs *Certs) validate(cc CertCollect) (*CertPair, error) {
-	if len(cc.Pair.Cert) > 0 && len(cc.Pair.Key) > 0 {
-		return &CertPair{cc.Pair.Cert, cc.Pair.Key}, nil
+func (cs *Certs) validate(cp *CertPair) error {
+	if len(cp.Cert) > 0 && len(cp.Key) > 0 {
+		return nil
 	}
-
-	return &CertPair{"", ""}, errors.New("empty certificate pair")
+	return errors.New("empty certificate pair")
 }

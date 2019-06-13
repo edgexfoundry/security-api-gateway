@@ -17,11 +17,14 @@
 package edgexproxy
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
 type testRequestor struct {
+	SecretSvcBaseURL string
 }
 
 func (tr *testRequestor) GetProxyBaseURL() string {
@@ -29,7 +32,7 @@ func (tr *testRequestor) GetProxyBaseURL() string {
 }
 
 func (tr *testRequestor) GetSecretSvcBaseURL() string {
-	return "test"
+	return tr.SecretSvcBaseURL
 }
 
 func (tr *testRequestor) GetHttpClient() *http.Client {
@@ -37,10 +40,11 @@ func (tr *testRequestor) GetHttpClient() *http.Client {
 }
 
 type testCertCfg struct {
+	CertPath string
 }
 
 func (tc *testCertCfg) GetCertPath() string {
-	return "test"
+	return tc.CertPath
 }
 
 func (tc *testCertCfg) GetTokenPath() string {
@@ -62,10 +66,37 @@ func TestGetSecret(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	cc := CertCollect{CertPair{"private-cert", "private-key"}}
+	cp := &CertPair{"private-cert", "private-key"}
 	cs := Certs{&testRequestor{}, &testCertCfg{}}
-	_, err := cs.validate(cc)
+	err := cs.validate(cp)
 	if err != nil {
 		t.Errorf("failed to validate cert collection")
+	}
+}
+
+func TestRetrieve(t *testing.T) {
+	certPath := "testCertPath"
+	token := "token"
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if r.Method != "GET" {
+			t.Errorf("expected GET request, got %s instead", r.Method)
+		}
+
+		if r.URL.EscapedPath() != fmt.Sprintf("/%s", certPath) {
+			t.Errorf("expected request to /%s, got %s instead", certPath, r.URL.EscapedPath())
+		}
+
+		if r.Header.Get(VaultToken) != token {
+			t.Errorf("expected request header for %s is %s, got %s instead", VaultToken, token, r.Header.Get(VaultToken))
+		}
+	}))
+	defer ts.Close()
+
+	cs := Certs{&testRequestor{ts.URL}, &testCertCfg{certPath}}
+	_, err := cs.retrieve(token)
+	if err != nil {
+		t.Errorf("failed to retrieve cert pair")
+		t.Errorf(err.Error())
 	}
 }
