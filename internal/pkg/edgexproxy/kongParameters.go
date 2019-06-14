@@ -96,11 +96,11 @@ type CertInfo struct {
 }
 
 type JWTCred struct {
-	ConsumerID string `json:"consumer_id, omitempty"`
-	CreatedAt  int    `json:"created_at, omitempty"`
-	ID         string `json:"id, omitempty"`
-	Key        string `json:"key, omitempty"`
-	Secret     string `json:"secret, omitempty"`
+	ConsumerID string `json:"consumer_id,omitempty"`
+	CreatedAt  int    `json:"created_at,omitempty"`
+	ID         string `json:"id,omitempty"`
+	Key        string `json:"key,omitempty"`
+	Secret     string `json:"secret,omitempty"`
 }
 
 type KongJWTClaims struct {

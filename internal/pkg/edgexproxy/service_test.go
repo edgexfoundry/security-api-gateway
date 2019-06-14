@@ -149,15 +149,15 @@ func TestInitKongRoutes(t *testing.T) {
 	}
 }
 
-func TestinitACL(t *testing.T) {
+func TestInitACL(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if r.Method != "POST" {
 			t.Errorf("expected POST request, got %s instead", r.Method)
 		}
 
-		if r.URL.EscapedPath() != "plugins/" {
-			t.Errorf("expected request to /services, got %s instead", r.URL.EscapedPath())
+		if r.URL.EscapedPath() != "/plugins/" {
+			t.Errorf("expected request to /plugins/, got %s instead", r.URL.EscapedPath())
 		}
 	}))
 	defer ts.Close()
