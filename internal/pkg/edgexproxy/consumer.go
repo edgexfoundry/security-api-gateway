@@ -140,7 +140,7 @@ func (c *Consumer) createJWTToken() (string, error) {
 	return "", errors.New(e)
 }
 
-//curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=edgex.com" --data "client_id=user123" -d "client_secret=user123"  -d "redirect_uri=http://www.edgex.com/"
+//curl -X POST "http://localhost:8001/consumers/user123/oauth2" -d "name=www.edgexfoundry.org" --data "client_id=user123" -d "client_secret=user123"  -d "redirect_uri=http://www.www.edgexfoundry.org/"
 //curl -k -v https://localhost:8443/{service}/oauth2/token -d "client_id=user123" -d "grant_type=client_credentials" -d "client_secret=user123" -d "scope=email"
 func (c *Consumer) createOAuth2Token() (string, error) {
 
