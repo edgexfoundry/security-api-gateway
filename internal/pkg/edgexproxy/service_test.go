@@ -179,7 +179,7 @@ func TestGetSvcIDs(t *testing.T) {
 		}
 
 		if r.URL.EscapedPath() != "/test" {
-			t.Errorf("expected request to /services, got %s instead", r.URL.EscapedPath())
+			t.Errorf("expected request to /test, got %s instead", r.URL.EscapedPath())
 		}
 	}))
 	defer ts.Close()
