@@ -13,8 +13,6 @@ MICROSERVICES=edgexproxy
 VERSION=$(shell cat ./VERSION)
 GIT_SHA=$(shell git rev-parse HEAD)
 
-prepare:
-
 build:
 	cd cmd/edgexproxy && $(GO) build  -o  $(MICROSERVICES) .
 clean:
