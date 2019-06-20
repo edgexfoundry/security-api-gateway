@@ -40,9 +40,9 @@ server = "edgex-vault"
 port = "8200"
 healthcheckpath = "v1/sys/health"
 certpath = "v1/secret/edgex/pki/tls/edgex-kong"
-tokenpath = "/vault/config/assets/resp-init.json"
+tokenpath = "/vault/config/assets/kong-token.json"
 cacertpath = "/vault/config/pki/EdgeXFoundryCA/EdgeXFoundryCA.pem"
-snis = "edgex.com"
+snis = "edgexfoundry.org"
 
 [edgexservices]
 	[edgexservices.coredata]

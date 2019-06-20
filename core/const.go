@@ -23,7 +23,7 @@ const (
 	CertificatesPath = "certificates/"
 	PluginsPath      = "plugins/"
 	SecurityService  = "securityservice"
-	EdgeXService     = "edgex.com"
+	EdgeXService     = "edgexfoundry.org"
 	VaultToken       = "X-Vault-Token"
 	OAuth2GrantType  = "client_credentials"
 	OAuth2Scopes     = "all"
