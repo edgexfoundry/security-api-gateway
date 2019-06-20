@@ -139,7 +139,7 @@ func (s *Service) loadCert() error {
 	}
 
 	lc.Info("trying to upload cert to proxy server")
-	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(CertificatesPath).BodyForm(body).Request()
+	req, err := sling.New().Base(s.Connect.GetProxyBaseURL()).Post(CertificatesPath).BodyJSON(body).Request()
 	resp, err := s.Connect.GetHttpClient().Do(req)
 	if err != nil {
 		lc.Error("failed to upload cert to proxy server with error %s", err.Error())

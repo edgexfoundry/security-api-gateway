@@ -90,9 +90,9 @@ type KongBasicAuthPlugin struct {
 }
 
 type CertInfo struct {
-	Cert string   `url:"cert,omitempty"`
-	Key  string   `url:"key,omitempty"`
-	Snis []string `url:"snis,omitempty"`
+	Cert string   `json:"cert,omitempty"`
+	Key  string   `json:"key,omitempty"`
+	Snis []string `json:"snis,omitempty"`
 }
 
 type JWTCred struct {
