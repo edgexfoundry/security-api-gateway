@@ -40,7 +40,7 @@ server = "localhost"
 port = "8200"
 healthcheckpath = "v1/sys/health"
 certpath = "v1/secret/edgex/pki/tls/edgex-kong"
-tokenpath = "res\\kong-token.json"
+tokenpath = "res\\resp-init.json"
 cacertpath = "res\\EdgeXFoundryCA\\EdgeXFoundryCA.pem"
 snis = "edgexfoundry.org"
 
