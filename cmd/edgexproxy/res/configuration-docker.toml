@@ -42,7 +42,7 @@ healthcheckpath = "v1/sys/health"
 certpath = "v1/secret/edgex/pki/tls/edgex-kong"
 tokenpath = "/vault/config/assets/resp-init.json"
 cacertpath = "/vault/config/pki/EdgeXFoundryCA/EdgeXFoundryCA.pem"
-snis = "www.edgexfoundry.org"
+snis = "edgex-kong"
 
 [edgexservices]
 	[edgexservices.coredata]
