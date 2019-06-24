@@ -5,7 +5,7 @@
 #
 
 .PHONY: build clean test docker run
-GO=CGO_ENABLED=0 GO111MODULE=on GOOS=linux go
+GO=CGO_ENABLED=0 GO111MODULE=on go
 DOCKERS=docker_edgexproxy
 .PHONY: $(DOCKERS)
 MICROSERVICES=edgexproxy

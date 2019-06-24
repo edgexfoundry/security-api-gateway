@@ -1,13 +1,27 @@
-FROM alpine:3.7
+FROM golang:1.12-alpine AS builder
 
-RUN mkdir -p /edgex/res
+ENV GO111MODULE=on
+WORKDIR /go/src/github.com/edgexfoundry/security-api-gateway
 
-WORKDIR /edgex
+RUN sed -e 's/dl-cdn[.]alpinelinux.org/nl.alpinelinux.org/g' -i~ /etc/apk/repositories
 
-COPY cmd/edgexproxy/res/configuration-docker.toml res/configuration.toml
+RUN apk update && apk add make git
 
-ADD cmd/edgexproxy/edgexproxy .
+COPY go.mod .
+COPY go.sum .
 
-ENTRYPOINT ["./edgexproxy"]
+RUN go mod download
 
-CMD  ["--init=true"]
+COPY . .
+
+RUN make build
+
+FROM scratch
+
+WORKDIR /
+
+COPY --from=builder /go/src/github.com/edgexfoundry/security-api-gateway/cmd/edgexproxy/res/configuration-docker.toml /res/configuration.toml
+
+COPY --from=builder /go/src/github.com/edgexfoundry/security-api-gateway/cmd/edgexproxy/edgexproxy .
+
+ENTRYPOINT ["./edgexproxy","--init=true"]
