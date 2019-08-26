@@ -73,7 +73,7 @@ file to their respective `-dev` tags.  These tags will likely be different from 
 At this point we need to get an access token to use to authenticate requests to the reverse proxy.
 
 From the directory with your docker-compose file, use the following commands to reset the proxy to its initial status
-and create a user and token.
+and create a user and token.  Note that the user needs to have the group `admin` for the token to have the correct permissions.
 
 ```
 docker-compose run edgex-proxy --reset=true --init=false
